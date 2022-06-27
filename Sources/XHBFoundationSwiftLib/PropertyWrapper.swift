@@ -206,3 +206,124 @@ public struct Localized {
         }
     }
 }
+
+@propertyWrapper
+public struct NotificationCenterPost<T> {
+    
+    private var value: T
+    private let name: Notification.Name
+    
+    public var wrappedValue: T {
+        set {
+            value = newValue
+            NotificationCenter.default.post(name: name, object: value)
+        }
+        get {
+            return value
+        }
+    }
+    
+    public init(wrappedValue: T, name: Notification.Name) {
+        self.value = wrappedValue
+        self.name = name
+    }
+}
+
+public protocol Observer: AnyObject {
+    associatedtype Value
+    func notify(value: Value)
+}
+
+@propertyWrapper
+final public class Observable<Target: Observer, Value> where Target.Value == Value {
+
+    private var value: Value
+    private let lock = DispatchSemaphore(value: 1)
+    
+    public var wrappedValue: Value {
+        set {
+            lock.wait()
+            value = newValue
+            notifyAll()
+            lock.signal()
+        }
+        get {
+            lock.wait()
+            defer {
+                lock.signal()
+            }
+            return value
+        }
+    }
+    
+    public var projectedValue: Observable<Target, Value> { return self }
+    
+    fileprivate class _Observer {
+        var hashString = "nil"
+        var queue: DispatchQueue? = nil
+        weak var target: Target? {
+            didSet {
+                if let target = target {
+                    self.hashString = "\(target)"
+                } else {
+                    self.hashString = "nil"
+                }
+            }
+        }
+        
+        init(target: Target?,
+             queue: DispatchQueue? = nil) {
+            self.target = target
+            self.queue = queue
+        }
+        
+        func notify(value: Value) {
+            if let queue = queue {
+                queue.async { [weak self] in
+                    guard let strongSelf = self else { return }
+                    strongSelf.target?.notify(value: value)
+                }
+            } else {
+                target?.notify(value: value)
+            }
+        }
+    }
+
+    private var observers = Set<_Observer>()
+
+    public init(wrappedValue: Value,
+                observer: Target,
+                queue: DispatchQueue? = nil) {
+        self.value = wrappedValue
+        add(observer: observer, queue: queue)
+    }
+    
+    public func add(observer: Target,
+                    queue: DispatchQueue? = nil) {
+        let ob = _Observer(target: observer,
+                           queue: queue)
+        observers.insert(ob)
+    }
+    
+    private func notifyAll() {
+        for observer in observers {
+            observer.notify(value: value)
+        }
+        removeNilIfPossilble()
+    }
+    
+    private func removeNilIfPossilble() {
+        observers = observers.filter { $0.target != nil }
+    }
+}
+
+extension Observable._Observer: Hashable {
+    
+    static func == (lhs: Observable._Observer, rhs: Observable._Observer) -> Bool {
+        return lhs.hashString == rhs.hashString
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(hashString)
+    }
+}
