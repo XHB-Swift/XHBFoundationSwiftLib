@@ -73,7 +73,7 @@ extension String {
         }
     }
     
-    public  func appending(path: Self) -> Self {
+    public func appending(path: Self) -> Self {
         let pathHasPrefixSlash = path.hasPrefix("/")
         let currentHasSuffixSlash = self.hasSuffix("/")
         if (pathHasPrefixSlash && !currentHasSuffixSlash) ||

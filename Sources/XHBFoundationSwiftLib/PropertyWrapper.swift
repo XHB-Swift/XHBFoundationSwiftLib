@@ -154,3 +154,55 @@ extension Default {
     public typealias EmptyString = Default<String.Empty>
 }
 
+@propertyWrapper
+public struct ConsoleLog<Value> {
+    
+    private var value: Value
+    
+    public init(wrappedValue: Value) {
+        self.value = wrappedValue
+    }
+    
+    public var wrappedValue: Value {
+        get { return self.value }
+        set {
+            self.value = newValue
+            #if DEBUG
+            print("new value is \(newValue)")
+            #endif
+        }
+    }
+}
+
+@propertyWrapper
+public struct UserDefaultWrapper<Value> {
+    
+    public let key: String
+    public let value: Value
+    
+    public var wrappedValue: Value {
+        get { return UserDefaults.standard.object(forKey: key) as? Value ?? value }
+        set {
+            UserDefaults.standard.set(newValue, forKey: key)
+        }
+    }
+}
+
+@propertyWrapper
+public struct Localized {
+    
+    public let key: String
+    public var tableName: String? = nil
+    public var bundle: Bundle = .main
+    public var value: String
+    public var comment = ""
+    
+    public var wrappedValue: String {
+        set {
+            value = NSLocalizedString(key, tableName: tableName, bundle: bundle, value: newValue, comment: comment)
+        }
+        get {
+            return value
+        }
+    }
+}
