@@ -208,43 +208,15 @@ public struct Localized {
 }
 
 @propertyWrapper
-public struct NotificationCenterPost<T> {
+@frozen public struct ThreadSafe<Value> {
     
-    private var value: T
-    private let name: Notification.Name
-    
-    public var wrappedValue: T {
-        set {
-            value = newValue
-            NotificationCenter.default.post(name: name, object: value)
-        }
-        get {
-            return value
-        }
-    }
-    
-    public init(wrappedValue: T, name: Notification.Name) {
-        self.value = wrappedValue
-        self.name = name
-    }
-}
-
-public protocol Observer: AnyObject {
-    associatedtype Value
-    func notify(value: Value)
-}
-
-@propertyWrapper
-final public class Observable<Target: Observer, Value> where Target.Value == Value {
-
-    private var value: Value
+    private var storedValue: Value
     private let lock = DispatchSemaphore(value: 1)
     
     public var wrappedValue: Value {
         set {
             lock.wait()
-            value = newValue
-            notifyAll()
+            storedValue = newValue
             lock.signal()
         }
         get {
@@ -252,78 +224,166 @@ final public class Observable<Target: Observer, Value> where Target.Value == Val
             defer {
                 lock.signal()
             }
-            return value
+            return storedValue
         }
     }
     
-    public var projectedValue: Observable<Target, Value> { return self }
-    
-    fileprivate class _Observer {
-        var hashString = "nil"
-        var queue: DispatchQueue? = nil
-        weak var target: Target? {
-            didSet {
-                if let target = target {
-                    self.hashString = "\(target)"
-                } else {
-                    self.hashString = "nil"
-                }
-            }
-        }
-        
-        init(target: Target?,
-             queue: DispatchQueue? = nil) {
-            self.target = target
-            self.queue = queue
-        }
-        
-        func notify(value: Value) {
-            if let queue = queue {
-                queue.async { [weak self] in
-                    guard let strongSelf = self else { return }
-                    strongSelf.target?.notify(value: value)
-                }
-            } else {
-                target?.notify(value: value)
-            }
-        }
-    }
-
-    private var observers = Set<_Observer>()
-
-    public init(wrappedValue: Value,
-                observer: Target,
-                queue: DispatchQueue? = nil) {
-        self.value = wrappedValue
-        add(observer: observer, queue: queue)
-    }
-    
-    public func add(observer: Target,
-                    queue: DispatchQueue? = nil) {
-        let ob = _Observer(target: observer,
-                           queue: queue)
-        observers.insert(ob)
-    }
-    
-    private func notifyAll() {
-        for observer in observers {
-            observer.notify(value: value)
-        }
-        removeNilIfPossilble()
-    }
-    
-    private func removeNilIfPossilble() {
-        observers = observers.filter { $0.target != nil }
+    public init(wrappedValue: Value) {
+        self.storedValue = wrappedValue
     }
 }
 
-extension Observable._Observer: Hashable {
+@propertyWrapper
+final public class Observable<Value> {
+
+    private var queue: DispatchQueue? = nil
+    private let lock = DispatchSemaphore(value: 1)
+    private var objectObservers = Set<AnyObserverContainer>()
+    private var storedValue: Value
     
-    static func == (lhs: Observable._Observer, rhs: Observable._Observer) -> Bool {
-        return lhs.hashString == rhs.hashString
+    deinit {
+        #if DEBUG
+        print("self = \(self) released")
+        #endif
     }
     
+    public var wrappedValue: Value {
+        set {
+            lock.wait()
+            storedValue = newValue
+            notifyAll(storedValue)
+            lock.signal()
+        }
+        get {
+            lock.wait()
+            defer {
+                lock.signal()
+            }
+            return storedValue
+        }
+    }
+    public var projectedValue: Observable<Value> { return self }
+
+    public init(wrappedValue: Value,
+                queue: DispatchQueue? = nil) {
+        self.storedValue = wrappedValue
+        self.queue = queue
+    }
+}
+
+extension Observable {
+    
+    public typealias ObserverClosure<Observer: AnyObject> = (Observer?, Value) -> Void
+    
+    public func add<Observer: AnyObject>(observer: Observer, closure: @escaping ObserverClosure<Observer>) {
+        let newOne = ObserverContainer<Observer>(observer, closure)
+        objectObservers.insert(newOne)
+    }
+    
+    private func notifyAll(_ value: Value) {
+        if objectObservers.isEmpty { return }
+        objectObservers.forEach { [weak self] observerContainer in
+            self?.notify(value: value, to: observerContainer)
+        }
+        objectObservers = objectObservers.filter { !$0.observerIsNil() }
+    }
+    
+    private func notify(value: Value, to target: AnyObserverContainer) {
+        if let queue = queue {
+            queue.async {
+                target.notify(value: value)
+            }
+        } else {
+            target.notify(value: value)
+        }
+    }
+}
+
+extension Observable {
+    
+    fileprivate class AnyObserverContainer {
+        
+        let hashString: UUID
+        var closure: Any?
+        weak var observer: AnyObject?
+        
+        init() {
+            self.hashString = UUID()
+        }
+        
+        init(_ observer: AnyObject, _ closure: Any) {
+            self.observer = observer
+            self.closure = closure
+            self.hashString = UUID()
+        }
+        
+        func notify(value: Value) {
+            guard let closure = closure as? ObserverClosure<AnyObject> else {
+                return
+            }
+            closure(observer, value)
+        }
+        
+        func observerIsNil() -> Bool {
+            return observer == nil
+        }
+    }
+    
+    fileprivate class ObserverContainer<Observer: AnyObject>: AnyObserverContainer {
+        
+        override func notify(value: Value) {
+            guard let closure = closure as? ObserverClosure<Observer> else {
+                return
+            }
+            closure(observer as? Observer, value)
+        }
+    }
+}
+
+extension Observable.AnyObserverContainer: Hashable {
+
+    static func == (lhs: Observable.AnyObserverContainer, rhs: Observable.AnyObserverContainer) -> Bool {
+        return lhs.hashString == rhs.hashString
+    }
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(hashString)
+    }
+}
+
+extension Observable {
+    
+    public func add<Observer: AnyObject>(observer: Observer,
+                                         at keyPath: ReferenceWritableKeyPath<Observer, Value>) {
+        add(observer: observer) { ob, value in
+            guard let strongOb = ob else { return }
+            strongOb[keyPath: keyPath] = value
+        }
+    }
+    
+    public func add<Observer: AnyObject>(observer: Observer,
+                                         at keyPath: ReferenceWritableKeyPath<Observer, Value?>) {
+        add(observer: observer) { ob, value in
+            guard let strongOb = ob else { return }
+            strongOb[keyPath: keyPath] = value
+        }
+    }
+    
+    public func add<Observer: AnyObject, T>(observer: Observer,
+                                            at keyPath: ReferenceWritableKeyPath<Observer, T>,
+                                            convert: @escaping (Value) -> T) {
+        add(observer: observer) { ob, value in
+            guard let strongOb = ob else { return }
+            strongOb[keyPath: keyPath] = convert(value)
+        }
+    }
+    
+    public func add<Observer: AnyObject, T>(observer: Observer,
+                                            at keyPath: ReferenceWritableKeyPath<Observer, T?>,
+                                            convert: @escaping (Value) -> T?) {
+        add(observer: observer) { ob, value in
+            guard let strongOb = ob else { return }
+            strongOb[keyPath: keyPath] = convert(value)
+        }
     }
 }
