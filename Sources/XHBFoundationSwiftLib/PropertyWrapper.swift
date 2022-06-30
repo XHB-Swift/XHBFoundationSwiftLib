@@ -234,156 +234,19 @@ public struct Localized {
 }
 
 @propertyWrapper
-final public class Observable<Value> {
-
-    private var queue: DispatchQueue? = nil
-    private let lock = DispatchSemaphore(value: 1)
-    private var objectObservers = Set<AnyObserverContainer>()
-    private var storedValue: Value
+public struct ObservableWrapper<Value> {
     
-    deinit {
-        #if DEBUG
-        print("self = \(self) released")
-        #endif
-    }
-    
+    private let observable: Observable<Value>
     public var wrappedValue: Value {
-        set {
-            lock.wait()
-            storedValue = newValue
-            notifyAll(storedValue)
-            lock.signal()
-        }
-        get {
-            lock.wait()
-            defer {
-                lock.signal()
-            }
-            return storedValue
-        }
-    }
-    public var projectedValue: Observable<Value> { return self }
-
-    public init(wrappedValue: Value,
-                queue: DispatchQueue? = nil) {
-        self.storedValue = wrappedValue
-        self.queue = queue
-    }
-}
-
-extension Observable {
-    
-    public typealias ObserverClosure<Observer: AnyObject> = (Observer?, Value) -> Void
-    
-    public func add<Observer: AnyObject>(observer: Observer, closure: @escaping ObserverClosure<Observer>) {
-        let newOne = ObserverContainer<Observer>(observer, closure)
-        objectObservers.insert(newOne)
-    }
-    
-    private func notifyAll(_ value: Value) {
-        if objectObservers.isEmpty { return }
-        objectObservers.forEach { [weak self] observerContainer in
-            self?.notify(value: value, to: observerContainer)
-        }
-        objectObservers = objectObservers.filter { !$0.observerIsNil() }
-    }
-    
-    private func notify(value: Value, to target: AnyObserverContainer) {
-        if let queue = queue {
-            queue.async {
-                target.notify(value: value)
-            }
-        } else {
-            target.notify(value: value)
-        }
-    }
-}
-
-extension Observable {
-    
-    fileprivate class AnyObserverContainer {
-        
-        let hashString: UUID
-        var closure: Any?
-        weak var observer: AnyObject?
-        
-        init() {
-            self.hashString = UUID()
-        }
-        
-        init(_ observer: AnyObject, _ closure: Any) {
-            self.observer = observer
-            self.closure = closure
-            self.hashString = UUID()
-        }
-        
-        func notify(value: Value) {
-            guard let closure = closure as? ObserverClosure<AnyObject> else {
-                return
-            }
-            closure(observer, value)
-        }
-        
-        func observerIsNil() -> Bool {
-            return observer == nil
+        didSet {
+            observable.notifyAll(wrappedValue)
         }
     }
     
-    fileprivate class ObserverContainer<Observer: AnyObject>: AnyObserverContainer {
-        
-        override func notify(value: Value) {
-            guard let closure = closure as? ObserverClosure<Observer> else {
-                return
-            }
-            closure(observer as? Observer, value)
-        }
-    }
-}
-
-extension Observable.AnyObserverContainer: Hashable {
-
-    static func == (lhs: Observable.AnyObserverContainer, rhs: Observable.AnyObserverContainer) -> Bool {
-        return lhs.hashString == rhs.hashString
-    }
-
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(hashString)
-    }
-}
-
-extension Observable {
+    public var projectedValue: Observable<Value> { return observable }
     
-    public func add<Observer: AnyObject>(observer: Observer,
-                                         at keyPath: ReferenceWritableKeyPath<Observer, Value>) {
-        add(observer: observer) { ob, value in
-            guard let strongOb = ob else { return }
-            strongOb[keyPath: keyPath] = value
-        }
-    }
-    
-    public func add<Observer: AnyObject>(observer: Observer,
-                                         at keyPath: ReferenceWritableKeyPath<Observer, Value?>) {
-        add(observer: observer) { ob, value in
-            guard let strongOb = ob else { return }
-            strongOb[keyPath: keyPath] = value
-        }
-    }
-    
-    public func add<Observer: AnyObject, T>(observer: Observer,
-                                            at keyPath: ReferenceWritableKeyPath<Observer, T>,
-                                            convert: @escaping (Value) -> T) {
-        add(observer: observer) { ob, value in
-            guard let strongOb = ob else { return }
-            strongOb[keyPath: keyPath] = convert(value)
-        }
-    }
-    
-    public func add<Observer: AnyObject, T>(observer: Observer,
-                                            at keyPath: ReferenceWritableKeyPath<Observer, T?>,
-                                            convert: @escaping (Value) -> T?) {
-        add(observer: observer) { ob, value in
-            guard let strongOb = ob else { return }
-            strongOb[keyPath: keyPath] = convert(value)
-        }
+    public init(wrappedValue: Value, queue: DispatchQueue? = nil) {
+        self.wrappedValue = wrappedValue
+        observable = .init(observedValue: wrappedValue, queue: queue)
     }
 }
