@@ -59,7 +59,7 @@ extension AnyObserverContainer: Hashable {
     }
 }
 
-public final class SelectorObserverContainer<Observer: AnyObject>: AnyObserverContainer {
+open class SelectorObserverContainer<Observer: AnyObject>: AnyObserverContainer {
     
     public typealias SelectorObserverAction = (Observer) -> Void
     
