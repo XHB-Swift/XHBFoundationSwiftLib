@@ -38,9 +38,9 @@ open class AnyObserverContainer {
     }
 }
 
-open class ObserverContainer<Observer: AnyObject>: AnyObserverContainer {
+public final class ObserverContainer<Observer: AnyObject>: AnyObserverContainer {
     
-    open override func notify<Value>(value: Value) {
+    public override func notify<Value>(value: Value) {
         guard let closure = closure as? ObserverClosure<Observer, Value> else {
             return
         }
@@ -56,5 +56,18 @@ extension AnyObserverContainer: Hashable {
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(hashString)
+    }
+}
+
+public final class SelectorObserverContainer<Observer: AnyObject>: AnyObserverContainer {
+    
+    public typealias SelectorObserverAction = (Observer) -> Void
+    
+    public let selector: Selector = #selector(selectorObserverAction(_:))
+    
+    @objc private func selectorObserverAction(_ sender: AnyObject) {
+        guard let observer = sender as? Observer,
+              let closure = self.closure as? SelectorObserverAction else { return }
+        closure(observer)
     }
 }
