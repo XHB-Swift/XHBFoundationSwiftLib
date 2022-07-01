@@ -32,7 +32,7 @@ open class AnyObservable {
     }
     
     public func notify<Value>(value: Value, to target: AnyObserverContainer) {
-        
+        target.notify(value: value)
     }
 }
 
@@ -41,12 +41,6 @@ final public class Observable<Value>: AnyObservable {
     private var queue: DispatchQueue? = nil
     private let lock = DispatchSemaphore(value: 1)
     private var storedValue: Value
-    
-    deinit {
-        #if DEBUG
-        print("self = \(self) released")
-        #endif
-    }
     
     public var observedValue: Value {
         set {
@@ -73,10 +67,10 @@ final public class Observable<Value>: AnyObservable {
     public override func notify<Value>(value: Value, to target: AnyObserverContainer) {
         if let queue = queue {
             queue.async {
-                target.notify(value: value)
+                super.notify(value: value, to: target)
             }
         } else {
-            target.notify(value: value)
+            super.notify(value: value, to: target)
         }
     }
 }
