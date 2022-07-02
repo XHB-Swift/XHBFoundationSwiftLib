@@ -7,38 +7,12 @@
 
 import Foundation
 
-open class NotificationCenterObserverContainer: SelectorObserverContainer<NotificationCenter> {
-    
-    public typealias Action = (Notification) -> Void
-    
-    deinit {
-        let notificationCenter = observer as? NotificationCenter
-        notificationCenter?.removeObserver(self)
-        #if DEBUG
-        print("Released NotificationCenterObserverContainer = \(self)")
-        #endif
-    }
-    
-    public init(_ observer: NotificationCenter?,
-                _ name: Notification.Name,
-                _ action: @escaping Action) {
-        super.init(observer, action)
-        observer?.addObserver(self, selector: self.selector, name: name, object: nil)
-    }
-    
-    public override func selectorObserverAction(_ sender: Any) {
-        guard let notification = sender as? Notification,
-              let closure = self.closure as? Action else { return }
-        closure(notification)
-    }
-}
-
-extension Observable {
+extension ValueObservable {
     
     public func add(observer: NotificationCenter = .default,
                     name: NSNotification.Name,
-                    action: @escaping NotificationCenterObserverContainer.Action) {
-        add(observer: NotificationCenterObserverContainer(observer, name, action))
+                    action: @escaping NotificationCenterObserver.Action) {
+        add(observer: NotificationCenterObserver(observer, name, action))
     }
 }
 
@@ -49,9 +23,9 @@ extension NotificationCenter {
     @discardableResult
     open func subscribe<Value>(value: Value,
                                name: Notification.Name,
-                               action: @escaping NotificationCenterObserverContainer.Action) -> Observable<Value> {
+                               action: @escaping NotificationCenterObserver.Action) -> ValueObservable<Value> {
         let observer = runtimePropertyLazyBinding(&Self.NotificationCenterSelfBindingKey) {
-            return Observable<Value>(observedValue: value)
+            return ValueObservable<Value>(observedValue: value)
         }
         observer.add(observer: self, name: name, action: action)
         return observer
@@ -62,9 +36,9 @@ extension NotificationCenter {
                                                     observer: Observer,
                                                     keyPath: ReferenceWritableKeyPath<Observer, Value>,
                                                     name: Notification.Name,
-                                                    action: @escaping (Notification) -> Value) -> Observable<Value> {
+                                                    action: @escaping (Notification) -> Value) -> ValueObservable<Value> {
         let ob = runtimePropertyLazyBinding(&Self.NotificationCenterSelfBindingKey) {
-            return Observable<Value>(observedValue: value)
+            return ValueObservable<Value>(observedValue: value)
         }
         ob.add(observer: self, name: name) { notification in
             observer[keyPath: keyPath] = action(notification)
@@ -77,9 +51,9 @@ extension NotificationCenter {
                                                     observer: Observer,
                                                     keyPath: ReferenceWritableKeyPath<Observer, Value?>,
                                                     name: Notification.Name,
-                                                    action: @escaping (Notification) -> Value?) -> Observable<Value> {
+                                                    action: @escaping (Notification) -> Value?) -> ValueObservable<Value> {
         let ob = runtimePropertyLazyBinding(&Self.NotificationCenterSelfBindingKey) {
-            return Observable<Value>(observedValue: value)
+            return ValueObservable<Value>(observedValue: value)
         }
         ob.add(observer: self, name: name) { notification in
             observer[keyPath: keyPath] = action(notification)
