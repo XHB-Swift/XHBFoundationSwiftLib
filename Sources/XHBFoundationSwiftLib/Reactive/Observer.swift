@@ -8,7 +8,7 @@
 
 import Foundation
 
-public typealias ObserverClosure<Observer: AnyObject, Value> = (Observer?, Value) -> Void
+public typealias ObserverClosure<Observer: AnyObject, Value> = (Observer, Value) -> Void
 
 open class AnyObserverContainer {
     
@@ -20,14 +20,15 @@ open class AnyObserverContainer {
         self.hashString = UUID()
     }
     
-    public init(_ observer: AnyObject, _ closure: Any) {
+    public init(_ observer: AnyObject?, _ closure: Any) {
         self.hashString = UUID()
         self.observer = observer
         self.closure = closure
     }
     
     open func notify<Value>(value: Value) {
-        guard let closure = closure as? ObserverClosure<AnyObject, Value> else {
+        guard let observer = self.observer,
+              let closure = closure as? ObserverClosure<AnyObject, Value> else {
             return
         }
         closure(observer, value)
@@ -35,16 +36,6 @@ open class AnyObserverContainer {
     
     open func observerIsNil() -> Bool {
         return observer == nil
-    }
-}
-
-public final class ObserverContainer<Observer: AnyObject>: AnyObserverContainer {
-    
-    public override func notify<Value>(value: Value) {
-        guard let closure = closure as? ObserverClosure<Observer, Value> else {
-            return
-        }
-        closure(observer as? Observer, value)
     }
 }
 
@@ -59,15 +50,26 @@ extension AnyObserverContainer: Hashable {
     }
 }
 
+public final class ObserverContainer<Observer: AnyObject>: AnyObserverContainer {
+    
+    public override func notify<Value>(value: Value) {
+        guard let ob = self.observer as? Observer,
+              let closure = closure as? ObserverClosure<Observer, Value> else {
+            return
+        }
+        closure(ob, value)
+    }
+}
+
 open class SelectorObserverContainer<Observer: AnyObject>: AnyObserverContainer {
     
-    public typealias SelectorObserverAction = (Observer) -> Void
+    public typealias Action = (Observer) -> Void
     
     public let selector: Selector = #selector(selectorObserverAction(_:))
     
-    @objc private func selectorObserverAction(_ sender: AnyObject) {
+    @objc public func selectorObserverAction(_ sender: Any) {
         guard let observer = sender as? Observer,
-              let closure = self.closure as? SelectorObserverAction else { return }
+              let closure = self.closure as? Action else { return }
         closure(observer)
     }
 }

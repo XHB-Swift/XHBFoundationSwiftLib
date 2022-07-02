@@ -23,6 +23,24 @@ open class AnyObservable {
         observers.insert(observer)
     }
     
+    open func remove(observer: AnyObserverContainer) {
+        observers = observers.filter { $0 != observer }
+    }
+    
+    open func remove(observer: AnyObject?) {
+        guard let validateOb = observer else { return }
+        observers = observers.filter {
+            guard let validateRefOb = $0.observer else { return false }
+            let ob1 = ObjectIdentifier(validateRefOb)
+            let ob2 = ObjectIdentifier(validateOb)
+            return ob1 != ob2
+        }
+    }
+    
+    open func removeAllObservers() {
+        observers.removeAll()
+    }
+    
     public func notifyAll<Value>(_ value: Value) {
         if observers.isEmpty { return }
         observers.forEach { [weak self] observerContainer in
@@ -77,45 +95,38 @@ final public class Observable<Value>: AnyObservable {
 
 extension Observable {
     
-    public func add<Observer: AnyObject>(observer: Observer, closure: @escaping ObserverClosure<Observer, Value>) {
+    public func add<Observer: AnyObject>(observer: Observer?, closure: @escaping ObserverClosure<Observer, Value>) {
         let newOne = ObserverContainer<Observer>(observer, closure)
         add(observer: newOne)
     }
-}
-
-extension Observable {
     
-    public func add<Observer: AnyObject>(observer: Observer,
+    public func add<Observer: AnyObject>(observer: Observer?,
                                          at keyPath: ReferenceWritableKeyPath<Observer, Value>) {
         add(observer: observer) { ob, value in
-            guard let strongOb = ob else { return }
-            strongOb[keyPath: keyPath] = value
+            ob[keyPath: keyPath] = value
         }
     }
     
-    public func add<Observer: AnyObject>(observer: Observer,
+    public func add<Observer: AnyObject>(observer: Observer?,
                                          at keyPath: ReferenceWritableKeyPath<Observer, Value?>) {
         add(observer: observer) { ob, value in
-            guard let strongOb = ob else { return }
-            strongOb[keyPath: keyPath] = value
+            ob[keyPath: keyPath] = value
         }
     }
     
-    public func add<Observer: AnyObject, T>(observer: Observer,
+    public func add<Observer: AnyObject, T>(observer: Observer?,
                                             at keyPath: ReferenceWritableKeyPath<Observer, T>,
                                             convert: @escaping (Value) -> T) {
         add(observer: observer) { ob, value in
-            guard let strongOb = ob else { return }
-            strongOb[keyPath: keyPath] = convert(value)
+            ob[keyPath: keyPath] = convert(value)
         }
     }
     
-    public func add<Observer: AnyObject, T>(observer: Observer,
+    public func add<Observer: AnyObject, T>(observer: Observer?,
                                             at keyPath: ReferenceWritableKeyPath<Observer, T?>,
                                             convert: @escaping (Value) -> T?) {
         add(observer: observer) { ob, value in
-            guard let strongOb = ob else { return }
-            strongOb[keyPath: keyPath] = convert(value)
+            ob[keyPath: keyPath] = convert(value)
         }
     }
 }
