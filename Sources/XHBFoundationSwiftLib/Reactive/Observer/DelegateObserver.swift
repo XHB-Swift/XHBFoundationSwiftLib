@@ -14,19 +14,12 @@ open class DelegateObserver<Base: AnyObject, Delegate>: AnyObserver {
     }
 }
 
-open class ObjCDelegateObserver<Base: NSObject, Delegate: NSObjectProtocol>: DelegateObserver<Base, Delegate> {
+open class ObjCDelegateObserver<Base: NSObject, Delegate: NSObjectProtocol, DelegateObject: NSObject>: DelegateObserver<Base, Delegate> {
     
-    public var objcDelegateObject: ObjCDelegate?
+    public var objcDelegateObject: DelegateObject?
     
-    public init(_ base: Base, _ delegateObject: ObjCDelegate) {
+    public init(_ base: Base, _ delegateObject: DelegateObject) {
         super.init(base)
         objcDelegateObject = delegateObject
-    }
-}
-
-extension ObjCDelegateObserver {
-    
-    open class ObjCDelegate: NSObject {
-        
     }
 }
