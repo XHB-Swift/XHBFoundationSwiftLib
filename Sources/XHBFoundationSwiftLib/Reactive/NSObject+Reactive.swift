@@ -12,6 +12,7 @@ extension NSObject {
     private static var NSObjectAnyObservableBindingKey: Void?
     private static var NSObjectAnyValueObservbaleBindingKey: Void?
     private static var NSObjectSpecifiedValueObservbaleBindingKey: Void?
+    private static var NSObjectSpecifiedOptionalValueObservbaleBindingKey: Void?
     
     open var anyObservable: AnyObservable {
         return runtimePropertyLazyBinding(&Self.NSObjectAnyObservableBindingKey, { AnyObservable() })
@@ -24,5 +25,12 @@ extension NSObject {
     open func specifiedValueObservable<Value>(value: Value? = nil,
                                               queue: DispatchQueue? = nil) -> ValueObservable<Value> {
         return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedValueObservbaleBindingKey, { ValueObservable(observedValue: value, queue: queue) })
+    }
+    
+    open func specifiedOptinalValueObservable<Value>(value: Value? = nil,
+                                                     queue: DispatchQueue? = nil) -> ValueObservable<Value?> {
+        return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedOptionalValueObservbaleBindingKey, {
+            ValueObservable<Value?>(observedValue: value, queue: queue)
+        })
     }
 }
