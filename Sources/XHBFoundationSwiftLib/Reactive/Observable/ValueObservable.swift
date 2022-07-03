@@ -11,9 +11,9 @@ final public class ValueObservable<Value>: AnyObservable {
 
     private var queue: DispatchQueue? = nil
     private let lock = DispatchSemaphore(value: 1)
-    private var storedValue: Value
+    private var storedValue: Value?
     
-    public var observedValue: Value {
+    public var observedValue: Value? {
         set {
             lock.wait()
             storedValue = newValue
@@ -29,13 +29,13 @@ final public class ValueObservable<Value>: AnyObservable {
         }
     }
 
-    public init(observedValue: Value,
+    public init(observedValue: Value? = nil,
                 queue: DispatchQueue? = nil) {
         self.storedValue = observedValue
         self.queue = queue
     }
     
-    public override func notify<Value>(value: Value, to target: AnyObserver) {
+    public override func notify<Value>(value: Value?, to target: AnyObserver) {
         if let queue = queue {
             queue.async {
                 super.notify(value: value, to: target)
