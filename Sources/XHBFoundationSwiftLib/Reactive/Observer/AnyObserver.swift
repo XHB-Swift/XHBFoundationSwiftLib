@@ -19,7 +19,7 @@ open class AnyObserver {
         self.hashString = UUID()
     }
     
-    public init(_ observer: AnyObject?, _ closure: Any) {
+    public init(_ observer: AnyObject?, _ closure: Any?) {
         self.hashString = UUID()
         self.base = observer
         self.closure = closure
