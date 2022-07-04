@@ -7,53 +7,64 @@
 
 import Foundation
 
-extension Observable where Ob == NotificationCenterObserver {
+extension NotificationCenter {
     
-    open func add(observer: NotificationCenter = .default,
-                  name: NSNotification.Name,
-                  action: @escaping SelectorObserver<NotificationCenter,Notification>.Action) {
-        add(observer: NotificationCenterObserver(observer, name, action))
+    public struct ObservableCenter: Observable {
+        
+        public typealias Output = Notification
+        public typealias Failure = Never
+        
+        public let center: NotificationCenter
+        public let name: Notification.Name
+        public let object: AnyObject?
+        
+        private let baseContainer: _ObservableCenterBoxBase
+        
+        public init(center: NotificationCenter, name: Notification.Name, object: AnyObject?) {
+            self.center = center
+            self.name = name
+            self.object = object
+            self.baseContainer = .init(center, name, object)
+        }
+        
+        public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Never == Ob.Failure, Notification == Ob.Input {
+            self.baseContainer.subscribe(observer)
+        }
+    }
+    
+    @discardableResult
+    public func observe(for name: Notification.Name, object: AnyObject? = nil) -> NotificationCenter.ObservableCenter {
+        return .init(center: self, name: name, object: object)
     }
 }
 
-extension NotificationCenter {
+extension NotificationCenter.ObservableCenter {
     
-    private static var NotificationCenterSelfBindingKey: Void?
+    private typealias NotificationObserver = AnyObserver<Notification, Never>
     
-    @discardableResult
-    open func subscribe(name: Notification.Name,
-                        queue: DispatchQueue? = nil,
-                        action: @escaping NotificationCenterObserver.Action) -> Observable<NotificationCenterObserver> {
-        let ob = notificationObservable
-        ob.add(observer: self, name: name, action: action)
-        return ob
-    }
-    
-    @discardableResult
-    open func subscribe<Observed: AnyObject, Value>(name: Notification.Name,
-                                                    observed: Observed,
-                                                    keyPath: ReferenceWritableKeyPath<Observed, Value>,
-                                                    value: Value? = nil,
-                                                    queue: DispatchQueue? = nil,
-                                                    convert: @escaping (Notification) -> Value) -> Observable<NotificationCenterObserver> {
-        return subscribe(name: name, queue: queue) { [weak observed] notification in
-            observed?[keyPath: keyPath] = convert(notification)
+    private class _ObservableCenterBoxBase: SelectorObserver<Notification> {
+         
+        private var baseArray: Array<NotificationObserver>
+        
+        deinit {
+            let center = self.base as? NotificationCenter
+            print("Released _ObservableCenterBoxBase = \(self)")
+            center?.removeObserver(self)
         }
-    }
-    
-    @discardableResult
-    open func subscribe<Observed: AnyObject, Value>(name: Notification.Name,
-                                                    observed: Observed,
-                                                    keyPath: ReferenceWritableKeyPath<Observed, Value?>,
-                                                    value: Value? = nil,
-                                                    queue: DispatchQueue? = nil,
-                                                    convert: @escaping (Notification) -> Value?) -> Observable<NotificationCenterObserver> {
-        return subscribe(name: name, queue: queue) { [weak observed] notification in
-            observed?[keyPath: keyPath] = convert(notification)
+        
+        init(_ center: NotificationCenter, _ name: Notification.Name, _ object: AnyObject?) {
+            self.baseArray = .init()
+            super.init(base: center)
+            center.addObserver(self, selector: self.selector, name: name, object: object)
+            self.closure = .init({ [weak self] sender in
+                self?.baseArray.forEach { $0.receive(sender) }
+            })
         }
+        
+        public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Never == Ob.Failure, Notification == Ob.Input {
+            self.baseArray.append(.init(observer))
+        }
+        
     }
     
-    open func removeObservable() {
-        notificationObservable.remove(observer: self)
-    }
 }

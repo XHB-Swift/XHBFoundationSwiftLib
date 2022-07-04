@@ -7,7 +7,7 @@
 
 import Foundation
 
-open class AnyObservable<Output, Failure: Error>: Observable {
+public struct AnyObservable<Output, Failure: Error>: Observable {
     
     public typealias Output = Output
     public typealias Failure = Failure
@@ -19,7 +19,7 @@ open class AnyObservable<Output, Failure: Error>: Observable {
     }
     
     public func subscribe<O>(_ observer: O) where O : Observer, Failure == O.Failure, Output == O.Input {
-        
+        self.box.subscribe(observer)
     }
 }
 
@@ -29,9 +29,7 @@ extension AnyObservable {
         typealias Output = O
         typealias Failure = F
         
-        func subscribe<Ob>(_ observer: Ob) where Ob : Observer, F == Ob.Failure, O == Ob.Input {
-            
-        }
+        func subscribe<Ob>(_ observer: Ob) where Ob : Observer, F == Ob.Failure, O == Ob.Input {}
     }
     
     private class _AnyObserverBox<Base: Observable>: _AnyObserverBoxBase<Base.Output, Base.Failure> {
@@ -40,6 +38,10 @@ extension AnyObservable {
         
         init(_ base: Base) {
             self.base = base
+        }
+        
+        override func subscribe<Ob>(_ observer: Ob) where Base.Output == Ob.Input, Base.Failure == Ob.Failure, Ob : Observer {
+            self.base.subscribe(observer)
         }
     }
     

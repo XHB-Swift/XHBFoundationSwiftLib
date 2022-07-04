@@ -7,34 +7,29 @@
 
 import Foundation
 
-open class SelectorObserver<Base: NSObject, Sender>: NSObject, PairedObserver {
+open class SelectorObserver<Input>: Observer {
     
-    public typealias Action = (Sender) -> Void
+    public typealias Input = Input
+    public typealias Failure = Never
     
-    open var identifier: UUID
-    public weak var base: Base?
-    public var action: Action?
+    public let base: Any
+    public var closure: ClosureObserver<Input>?
     
     public let selector: Selector = #selector(selectorObserverAction(_:))
     
-    public override init() {
-        self.identifier = UUID()
-        super.init()
-    }
-    
-    public init(_ base: Base?, _ action: Action?) {
+    public init(base: Any, closure: ClosureObserver<Input>? = nil) {
         self.base = base
-        self.action = action
-        self.identifier = UUID()
+        self.closure = closure
     }
     
     @objc public func selectorObserverAction(_ sender: Any) {
-        guard let _sender = sender as? Sender,
-              let action = self.action else { return }
-        action(_sender)
+        guard let input = sender as? Input else { return }
+        receive(input)
     }
     
-    public func notify<Value>(oldValue: Value, newValue: Value) {
-        
+    public func receive(_ input: Input) {
+        self.closure?.receive(input)
     }
+    
+    public func receive(_ failure: Never) {}
 }

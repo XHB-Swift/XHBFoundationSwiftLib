@@ -7,27 +7,52 @@
 
 import Foundation
 
-open class AnyObserver<Input, Failure: Error>: Observer {
+public struct AnyObserver<Input, Failure: Error>: Observer {
     
     public typealias Input = Input
     public typealias Failure = Failure
     
-    public typealias OnInput = (Input) -> Void
-    public typealias OnOccur = (Failure) -> Void
-    
-    private var inputClosure: OnInput
-    private var occurClosure: OnOccur
+    private var box: _AnyObserverBoxBase<Input, Failure>
     
     public init<O: Observer>(_ observer: O) where O.Input == Input, O.Failure == Failure {
-        self.inputClosure = observer.receive(_:)
-        self.occurClosure = observer.receive(_:)
+        self.box = _AnyObserverBox(observer)
     }
     
     public func receive(_ input: Input) {
-        self.inputClosure(input)
+        self.box.receive(input)
     }
     
     public func receive(_ failure: Failure) {
-        self.occurClosure(failure)
+        self.box.receive(failure)
     }
+}
+
+extension AnyObserver {
+    
+    private class _AnyObserverBoxBase<Input, Failure: Error>: Observer {
+        
+        typealias Input = Input
+        typealias Failure = Failure
+        
+        func receive(_ input: Input) {}
+        func receive(_ failure: Failure) {}
+    }
+    
+    private class _AnyObserverBox<Base: Observer>: _AnyObserverBoxBase<Base.Input, Base.Failure> {
+        
+        var base: Base
+        
+        init(_ base: Base) {
+            self.base = base
+        }
+        
+        override func receive(_ input: Base.Input) {
+            self.base.receive(input)
+        }
+        
+        override func receive(_ failure: Base.Failure) {
+            self.base.receive(failure)
+        }
+    }
+    
 }

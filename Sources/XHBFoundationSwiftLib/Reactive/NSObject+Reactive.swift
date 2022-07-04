@@ -10,26 +10,21 @@ import Foundation
 extension NSObject {
     
     private static var NSObjectAnyValueObservbaleBindingKey: Void?
-    private static var NSObjectNotificationObservableBindingKey: Void?
     private static var NSObjectSpecifiedValueObservbaleBindingKey: Void?
     private static var NSObjectSpecifiedOptionalValueObservbaleBindingKey: Void?
     
-    open var anyValueObservable: DataObservable<Any> {
+    open var anyValueObservable: DataObserved<Any,Never> {
         return runtimePropertyLazyBinding(&Self.NSObjectAnyValueObservbaleBindingKey, { .init() })
     }
     
-    open var notificationObservable: Observable<NotificationCenterObserver> {
-        return runtimePropertyLazyBinding(&Self.NSObjectNotificationObservableBindingKey, { .init() })
-    }
-    
     open func specifiedValueObservable<Value>(value: Value,
-                                              queue: DispatchQueue? = nil) -> DataObservable<Value> {
+                                              queue: DispatchQueue? = nil) -> DataObserved<Any,Never> {
         return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedValueObservbaleBindingKey, { .init(observedValue: value,
                                                                                                     queue: queue) })
     }
     
     open func specifiedOptinalValueObservable<Value>(value: Value? = nil,
-                                                     queue: DispatchQueue? = nil) -> DataObservable<Value?> {
+                                                     queue: DispatchQueue? = nil) -> DataObserved<Any,Never> {
         return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedOptionalValueObservbaleBindingKey, { .init(queue: queue) })
     }
 }
