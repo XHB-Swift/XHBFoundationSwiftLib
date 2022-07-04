@@ -7,19 +7,36 @@
 
 import Foundation
 
-open class DelegateObserver<Base: AnyObject, Delegate>: AnyObserver {
+open class DelegateObserver<Base: AnyObject, Delegate>: Observer {
     
-    public init(_ base: Base) {
-        super.init(base, nil)
+    public typealias Base = Base
+    
+    public weak var base: Base?
+    public var identifier: UUID
+    
+    public init(_ base: Base?) {
+        self.base = base
+        self.identifier = .init()
+    }
+    
+    public func notify<Value>(oldValue: Value, newValue: Value) {
+        
     }
 }
 
-open class ObjCDelegateObserver<Base: NSObject, Delegate: NSObjectProtocol, DelegateObject: NSObject>: DelegateObserver<Base, Delegate> {
+open class ObjCDelegateObserver<Base: NSObject, Delegate: NSObjectProtocol>: NSObject, Observer {
     
-    public var objcDelegateObject: DelegateObject?
+    public typealias Base = Base
     
-    public init(_ base: Base, _ delegateObject: DelegateObject) {
-        super.init(base)
-        objcDelegateObject = delegateObject
+    public weak var base: Base?
+    public var identifier: UUID
+    
+    public init(_ base: Base?) {
+        self.base = base
+        self.identifier = .init()
+    }
+    
+    public func notify<Value>(oldValue: Value, newValue: Value) {
+        
     }
 }

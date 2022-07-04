@@ -9,28 +9,27 @@ import Foundation
 
 extension NSObject {
     
-    private static var NSObjectAnyObservableBindingKey: Void?
     private static var NSObjectAnyValueObservbaleBindingKey: Void?
+    private static var NSObjectNotificationObservableBindingKey: Void?
     private static var NSObjectSpecifiedValueObservbaleBindingKey: Void?
     private static var NSObjectSpecifiedOptionalValueObservbaleBindingKey: Void?
     
-    open var anyObservable: AnyObservable {
-        return runtimePropertyLazyBinding(&Self.NSObjectAnyObservableBindingKey, { AnyObservable() })
+    open var anyValueObservable: DataObservable<Any> {
+        return runtimePropertyLazyBinding(&Self.NSObjectAnyValueObservbaleBindingKey, { .init() })
     }
     
-    open var anyValueObservable: ValueObservable<Any> {
-        return runtimePropertyLazyBinding(&Self.NSObjectAnyValueObservbaleBindingKey, { ValueObservable<Any>() })
+    open var notificationObservable: Observable<NotificationCenterObserver> {
+        return runtimePropertyLazyBinding(&Self.NSObjectNotificationObservableBindingKey, { .init() })
     }
     
-    open func specifiedValueObservable<Value>(value: Value? = nil,
-                                              queue: DispatchQueue? = nil) -> ValueObservable<Value> {
-        return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedValueObservbaleBindingKey, { ValueObservable(observedValue: value, queue: queue) })
+    open func specifiedValueObservable<Value>(value: Value,
+                                              queue: DispatchQueue? = nil) -> DataObservable<Value> {
+        return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedValueObservbaleBindingKey, { .init(observedValue: value,
+                                                                                                    queue: queue) })
     }
     
     open func specifiedOptinalValueObservable<Value>(value: Value? = nil,
-                                                     queue: DispatchQueue? = nil) -> ValueObservable<Value?> {
-        return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedOptionalValueObservbaleBindingKey, {
-            ValueObservable<Value?>(observedValue: value, queue: queue)
-        })
+                                                     queue: DispatchQueue? = nil) -> DataObservable<Value?> {
+        return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedOptionalValueObservbaleBindingKey, { .init(queue: queue) })
     }
 }

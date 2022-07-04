@@ -7,28 +7,19 @@
 
 import Foundation
 
-open class NotificationCenterObserver: SelectorObserver<NotificationCenter> {
-    
-    public typealias Action = (Notification) -> Void
+open class NotificationCenterObserver: SelectorObserver<NotificationCenter, Notification> {
     
     deinit {
-        let notificationCenter = self.base as? NotificationCenter
-        notificationCenter?.removeObserver(self)
+        base?.removeObserver(self)
         #if DEBUG
         print("Released NotificationCenterObserverContainer = \(self)")
         #endif
     }
     
-    public init(_ observer: NotificationCenter?,
+    public init(_ base: NotificationCenter?,
                 _ name: Notification.Name,
                 _ action: @escaping Action) {
-        super.init(observer, action)
-        observer?.addObserver(self, selector: self.selector, name: name, object: nil)
-    }
-    
-    public override func selectorObserverAction(_ sender: Any) {
-        guard let notification = sender as? Notification,
-              let closure = self.closure as? Action else { return }
-        closure(notification)
+        super.init(base, action)
+        base?.addObserver(self, selector: self.selector, name: name, object: nil)
     }
 }

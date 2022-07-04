@@ -236,14 +236,14 @@ public struct Localized {
 @propertyWrapper
 public struct ObservableWrapper<Value> {
     
-    private let observable: ValueObservable<Value>
+    private let observable: DataObservable<Value>
     public var wrappedValue: Value {
         didSet {
-            observable.notifyAll(wrappedValue)
+            observable.observedValue = wrappedValue
         }
     }
     
-    public var projectedValue: ValueObservable<Value> { return observable }
+    public var projectedValue: DataObservable<Value> { return observable }
     
     public init(wrappedValue: Value, queue: DispatchQueue? = nil) {
         self.wrappedValue = wrappedValue

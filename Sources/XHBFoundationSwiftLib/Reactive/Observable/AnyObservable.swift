@@ -7,49 +7,40 @@
 
 import Foundation
 
-open class AnyObservable {
+open class AnyObservable<Output, Failure: Error>: Observable {
     
-    private var observers = Set<AnyObserver>()
+    public typealias Output = Output
+    public typealias Failure = Failure
     
-    deinit {
-        #if DEBUG
-        print("self = \(self) released")
-        #endif
+    private var box: _AnyObserverBoxBase<Output, Failure>
+    
+    public init<Ob: Observable>(_ observable: Ob) where Output == Ob.Output, Failure == Ob.Failure {
+        self.box = _AnyObserverBox(observable)
     }
     
-    public init() {}
-    
-    open func add(observer: AnyObserver) {
-        observers.insert(observer)
+    public func subscribe<O>(_ observer: O) where O : Observer, Failure == O.Failure, Output == O.Input {
+        
     }
+}
+
+extension AnyObservable {
     
-    open func remove(observer: AnyObserver) {
-        observers = observers.filter { $0 != observer }
-    }
-    
-    open func remove(observer: AnyObject?) {
-        guard let validateOb = observer else { return }
-        observers = observers.filter {
-            guard let validateRefOb = $0.base else { return false }
-            let ob1 = ObjectIdentifier(validateRefOb)
-            let ob2 = ObjectIdentifier(validateOb)
-            return ob1 != ob2
+    private class _AnyObserverBoxBase<O, F: Error>: Observable {
+        typealias Output = O
+        typealias Failure = F
+        
+        func subscribe<Ob>(_ observer: Ob) where Ob : Observer, F == Ob.Failure, O == Ob.Input {
+            
         }
     }
     
-    open func removeAllObservers() {
-        observers.removeAll()
-    }
-    
-    public func notifyAll<Value>(_ value: Value) {
-        if observers.isEmpty { return }
-        observers.forEach { [weak self] observerContainer in
-            self?.notify(value: value, to: observerContainer)
+    private class _AnyObserverBox<Base: Observable>: _AnyObserverBoxBase<Base.Output, Base.Failure> {
+        
+        var base: Base
+        
+        init(_ base: Base) {
+            self.base = base
         }
-        observers = observers.filter { !$0.observerIsNil() }
     }
     
-    public func notify<Value>(value: Value, to target: AnyObserver) {
-        target.notify(value: value)
-    }
 }

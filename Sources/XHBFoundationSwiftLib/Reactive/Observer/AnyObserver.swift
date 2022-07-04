@@ -7,44 +7,27 @@
 
 import Foundation
 
-public typealias ObserverClosure<Observer: AnyObject, Value> = (Observer, Value) -> Void
-
-open class AnyObserver {
+open class AnyObserver<Input, Failure: Error>: Observer {
     
-    let hashString: UUID
-    open var closure: Any?
-    open weak var base: AnyObject?
+    public typealias Input = Input
+    public typealias Failure = Failure
     
-    public init() {
-        self.hashString = UUID()
+    public typealias OnInput = (Input) -> Void
+    public typealias OnOccur = (Failure) -> Void
+    
+    private var inputClosure: OnInput
+    private var occurClosure: OnOccur
+    
+    public init<O: Observer>(_ observer: O) where O.Input == Input, O.Failure == Failure {
+        self.inputClosure = observer.receive(_:)
+        self.occurClosure = observer.receive(_:)
     }
     
-    public init(_ observer: AnyObject?, _ closure: Any?) {
-        self.hashString = UUID()
-        self.base = observer
-        self.closure = closure
+    public func receive(_ input: Input) {
+        self.inputClosure(input)
     }
     
-    open func notify<Value>(value: Value) {
-        guard let observer = self.base,
-              let closure = closure as? ObserverClosure<AnyObject, Value> else {
-            return
-        }
-        closure(observer, value)
-    }
-    
-    open func observerIsNil() -> Bool {
-        return base == nil
-    }
-}
-
-extension AnyObserver: Hashable {
-
-    public static func == (lhs: AnyObserver, rhs: AnyObserver) -> Bool {
-        return lhs.hashString == rhs.hashString
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(hashString)
+    public func receive(_ failure: Failure) {
+        self.occurClosure(failure)
     }
 }
