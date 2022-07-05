@@ -9,21 +9,15 @@ import Foundation
 
 extension NSObject {
     
-    private static var NSObjectAnyValueObservbaleBindingKey: Void?
     private static var NSObjectSpecifiedValueObservbaleBindingKey: Void?
     private static var NSObjectSpecifiedOptionalValueObservbaleBindingKey: Void?
     
-    open var anyValueObservable: DataObserved<Any,Never> {
-        return runtimePropertyLazyBinding(&Self.NSObjectAnyValueObservbaleBindingKey, { .init() })
-    }
-    
     open func specifiedValueObservable<Value>(value: Value,
-                                              queue: DispatchQueue? = nil) -> DataObserved<Value,Never> {
-        return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedValueObservbaleBindingKey, { .init(observedValue: value,
-                                                                                                    queue: queue) })
+                                              queue: DispatchQueue? = nil) -> CurrentValueObservation<Value,Never> {
+        return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedValueObservbaleBindingKey, { .init(value) })
     }
     
-    open func specifiedOptinalValueObservable<Value>(queue: DispatchQueue? = nil) -> DataObserved<Value?,Never> {
-        return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedOptionalValueObservbaleBindingKey, { .init(queue: queue) })
+    open func specifiedOptinalValueObservable<Value>(queue: DispatchQueue? = nil) -> CurrentValueObservation<Value?,Never> {
+        return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedOptionalValueObservbaleBindingKey, { .init(nil) })
     }
 }
