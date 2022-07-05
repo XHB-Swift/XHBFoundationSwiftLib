@@ -18,17 +18,17 @@ extension NotificationCenter {
         public let name: Notification.Name
         public let object: AnyObject?
         
-        private let baseContainer: _ObservableCenterBoxBase
+        private let boxContainer: _ObservableCenterBox
         
         public init(center: NotificationCenter, name: Notification.Name, object: AnyObject?) {
             self.center = center
             self.name = name
             self.object = object
-            self.baseContainer = .init(center, name, object)
+            self.boxContainer = .init(center, name, object)
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Never == Ob.Failure, Notification == Ob.Input {
-            self.baseContainer.subscribe(observer)
+            self.boxContainer.subscribe(observer)
         }
     }
     
@@ -42,9 +42,9 @@ extension NotificationCenter.ObservableCenter {
     
     private typealias NotificationObserver = AnyObserver<Notification, Never>
     
-    private class _ObservableCenterBoxBase: SelectorObserver<Notification> {
+    private final class _ObservableCenterBox: SelectorObserver<Notification> {
          
-        private var baseArray: Array<NotificationObserver>
+        private var baseArray: ContiguousArray<NotificationObserver>
         
         deinit {
             let center = self.base as? NotificationCenter
@@ -62,7 +62,7 @@ extension NotificationCenter.ObservableCenter {
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Never == Ob.Failure, Notification == Ob.Input {
-            self.baseArray.append(.init(observer))
+            self.baseArray.append(observer.eraseToAnyObserver())
         }
         
     }

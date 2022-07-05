@@ -22,7 +22,5 @@ public struct ClosureObserver<Input>: Observer {
         self.clousre(input)
     }
     
-    public func receive(_ failure: Never) {
-        
-    }
+    public func receive(_ failure: Never) {}
 }

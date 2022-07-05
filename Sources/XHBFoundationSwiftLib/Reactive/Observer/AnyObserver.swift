@@ -56,3 +56,10 @@ extension AnyObserver {
     }
     
 }
+
+extension Observer {
+    
+    func eraseToAnyObserver() -> AnyObserver<Input, Failure> {
+        return .init(self)
+    }
+}

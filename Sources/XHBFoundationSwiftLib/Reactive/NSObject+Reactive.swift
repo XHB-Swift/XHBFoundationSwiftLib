@@ -18,13 +18,12 @@ extension NSObject {
     }
     
     open func specifiedValueObservable<Value>(value: Value,
-                                              queue: DispatchQueue? = nil) -> DataObserved<Any,Never> {
+                                              queue: DispatchQueue? = nil) -> DataObserved<Value,Never> {
         return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedValueObservbaleBindingKey, { .init(observedValue: value,
                                                                                                     queue: queue) })
     }
     
-    open func specifiedOptinalValueObservable<Value>(value: Value? = nil,
-                                                     queue: DispatchQueue? = nil) -> DataObserved<Any,Never> {
+    open func specifiedOptinalValueObservable<Value>(queue: DispatchQueue? = nil) -> DataObserved<Value?,Never> {
         return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedOptionalValueObservbaleBindingKey, { .init(queue: queue) })
     }
 }

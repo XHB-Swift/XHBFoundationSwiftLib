@@ -1,5 +1,5 @@
 //
-//  DataObservable.swift
+//  DataObserved.swift
 //  
 //
 //  Created by xiehongbiao on 2022/7/4.
@@ -14,7 +14,7 @@ open class DataObserved<Output, Failure: Error>: Observable {
     
     private var queue: DispatchQueue? = nil
     private let lock = DispatchSemaphore(value: 1)
-    private var observers: Array<AnyObserver<Output,Failure>>
+    private var observers: ContiguousArray<AnyObserver<Output,Failure>>
     private var storedValue: Output?
     
     public var observedValue: Output? {
@@ -41,6 +41,11 @@ open class DataObserved<Output, Failure: Error>: Observable {
     public init(observedValue: Output? = nil,
                 queue: DispatchQueue? = nil) {
         self.storedValue = observedValue
+        self.queue = queue
+        self.observers = .init()
+    }
+    
+    public init(queue: DispatchQueue?) {
         self.queue = queue
         self.observers = .init()
     }

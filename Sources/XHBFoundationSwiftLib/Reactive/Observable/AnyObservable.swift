@@ -46,3 +46,10 @@ extension AnyObservable {
     }
     
 }
+
+extension Observable {
+    
+    func eraseToAnyObservable() -> AnyObservable<Output, Failure> {
+        return .init(self)
+    }
+}
