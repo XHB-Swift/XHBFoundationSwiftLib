@@ -12,6 +12,5 @@ public protocol Observer {
     associatedtype Input
     associatedtype Failure: Error
     
-    func receive(_ input: Input)
-    func receive(_ failure: Failure)
+    func receive(_ signal: Observers.Signal<Input, Failure>)
 }

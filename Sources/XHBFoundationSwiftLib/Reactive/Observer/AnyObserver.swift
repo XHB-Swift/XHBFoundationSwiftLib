@@ -18,12 +18,8 @@ public struct AnyObserver<Input, Failure: Error>: Observer {
         self.box = _AnyObserverBox(observer)
     }
     
-    public func receive(_ input: Input) {
-        self.box.receive(input)
-    }
-    
-    public func receive(_ failure: Failure) {
-        self.box.receive(failure)
+    public func receive(_ signal: Observers.Signal<Input, Failure>) {
+        self.box.receive(signal)
     }
 }
 
@@ -34,8 +30,7 @@ extension AnyObserver {
         typealias Input = Input
         typealias Failure = Failure
         
-        func receive(_ input: Input) {}
-        func receive(_ failure: Failure) {}
+        func receive(_ signal: Observers.Signal<Input, Failure>) {}
     }
     
     private class _AnyObserverBox<Base: Observer>: _AnyObserverBoxBase<Base.Input, Base.Failure> {
@@ -46,12 +41,8 @@ extension AnyObserver {
             self.base = base
         }
         
-        override func receive(_ input: Base.Input) {
-            self.base.receive(input)
-        }
-        
-        override func receive(_ failure: Base.Failure) {
-            self.base.receive(failure)
+        override func receive(_ signal: Observers.Signal<Base.Input, Base.Failure>) {
+            self.base.receive(signal)
         }
     }
     

@@ -245,7 +245,7 @@ public struct ObservableWrapper<Value> {
     
     public var projectedValue: CurrentValueObservation<Value, Never> { return observable }
     
-    public init(wrappedValue: Value, queue: DispatchQueue? = nil) {
+    public init(wrappedValue: Value) {
         self.wrappedValue = wrappedValue
         observable = .init(wrappedValue)
     }

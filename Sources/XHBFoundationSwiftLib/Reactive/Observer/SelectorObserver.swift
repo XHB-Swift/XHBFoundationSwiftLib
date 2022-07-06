@@ -13,23 +13,21 @@ open class SelectorObserver<Input>: Observer {
     public typealias Failure = Never
     
     public let base: Any
-    public var closure: ClosureObserver<Input>?
+    public var closure: ClosureNeverObserver<Input>?
     
     public let selector: Selector = #selector(selectorObserverAction(_:))
     
-    public init(base: Any, closure: ClosureObserver<Input>? = nil) {
+    public init(base: Any, closure: ClosureNeverObserver<Input>? = nil) {
         self.base = base
         self.closure = closure
     }
     
     @objc public func selectorObserverAction(_ sender: Any) {
         guard let input = sender as? Input else { return }
-        receive(input)
+        receive(.receiving(input))
     }
     
-    public func receive(_ input: Input) {
-        self.closure?.receive(input)
+    public func receive(_ signal: Observers.Signal<Input, Never>) {
+        self.closure?.receive(signal)
     }
-    
-    public func receive(_ failure: Never) {}
 }

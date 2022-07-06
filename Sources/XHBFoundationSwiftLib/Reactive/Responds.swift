@@ -28,7 +28,7 @@ public struct Responded<Base, Input>: Observer {
     public typealias Input = Input
     public typealias Failure = Never
     
-    private let responded: ClosureObserver<Input>
+    private let responded: ClosureNeverObserver<Input>
     
     public init<Target: AnyObject>(_ target: Target, _ responded: @escaping (Target, Input) -> Void) {
         weak var weakTarget = target
@@ -38,9 +38,7 @@ public struct Responded<Base, Input>: Observer {
         })
     }
     
-    public func receive(_ input: Input) {
-        self.responded.receive(input)
+    public func receive(_ signal: Observers.Signal<Input, Never>) {
+        self.responded.receive(signal)
     }
-    
-    public func receive(_ failure: Never) {}
 }

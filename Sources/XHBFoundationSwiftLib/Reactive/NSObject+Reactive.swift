@@ -7,17 +7,19 @@
 
 import Foundation
 
-extension NSObject {
+public protocol RespondingExtension {
     
-    private static var NSObjectSpecifiedValueObservbaleBindingKey: Void?
-    private static var NSObjectSpecifiedOptionalValueObservbaleBindingKey: Void?
+    associatedtype Base
     
-    open func specifiedValueObservable<Value>(value: Value,
-                                              queue: DispatchQueue? = nil) -> CurrentValueObservation<Value,Never> {
-        return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedValueObservbaleBindingKey, { .init(value) })
-    }
+    var responding: Responding<Base> { get set }
+}
+
+extension RespondingExtension {
     
-    open func specifiedOptinalValueObservable<Value>(queue: DispatchQueue? = nil) -> CurrentValueObservation<Value?,Never> {
-        return runtimePropertyLazyBinding(&Self.NSObjectSpecifiedOptionalValueObservbaleBindingKey, { .init(nil) })
+    public var responding: Responding<Self> {
+        get { .init(self) }
+        set {}
     }
 }
+
+extension NSObject: RespondingExtension {}

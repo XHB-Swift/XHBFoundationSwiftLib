@@ -7,20 +7,28 @@
 
 import Foundation
 
-public struct ClosureObserver<Input>: Observer {
+public struct ClosureObserver<Input, Failure: Error>: Observer {
     
     public typealias Input = Input
-    public typealias Failure = Never
+    public typealias Failure = Failure
     
     public let clousre: (Input) -> Void
+    public let failure: (Failure) -> Void
     
-    public init(_ closure: @escaping (Input) -> Void) {
+    public init(_ closure: @escaping (Input) -> Void,
+                _ failure: @escaping (Failure) -> Void) {
         self.clousre = closure
+        self.failure = failure
     }
     
-    public func receive(_ input: Input) {
-        self.clousre(input)
+    public func receive(_ signal: Observers.Signal<Input, Failure>) {
+        switch signal {
+        case .finished:
+            break
+        case .receiving(let value):
+            self.clousre(value)
+        case .failure(let error):
+            self.failure(error)
+        }
     }
-    
-    public func receive(_ failure: Never) {}
 }

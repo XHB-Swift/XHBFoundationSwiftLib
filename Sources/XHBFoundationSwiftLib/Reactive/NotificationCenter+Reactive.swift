@@ -57,7 +57,7 @@ extension NotificationCenter.ObservableCenter {
             super.init(base: center)
             center.addObserver(self, selector: self.selector, name: name, object: object)
             self.closure = .init({ [weak self] sender in
-                self?.baseArray.forEach { $0.receive(sender) }
+                self?.baseArray.forEach { $0.receive(.receiving(sender)) }
             })
         }
         
