@@ -7,17 +7,17 @@
 
 import Foundation
 
-open class SelectorObserver<Input>: Observer {
+open class SelectorObserver<Input, Base: NSObject>: Observer {
     
     public typealias Input = Input
     public typealias Failure = Never
     
-    public let base: Any
+    public let base: Base
     public var closure: ClosureNeverObserver<Input>?
     
     public let selector: Selector = #selector(selectorObserverAction(_:))
     
-    public init(base: Any, closure: ClosureNeverObserver<Input>? = nil) {
+    public init(base: Base, closure: ClosureNeverObserver<Input>? = nil) {
         self.base = base
         self.closure = closure
     }

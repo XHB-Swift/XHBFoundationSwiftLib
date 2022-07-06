@@ -53,7 +53,7 @@ extension CurrentValueObservation where Failure == Never {
     
     @discardableResult
     public func bind<Target: AnyObject, Value>(target: Target,
-                                               to keyPath:ReferenceWritableKeyPath<Target, Value>,
+                                               to keyPath: ReferenceWritableKeyPath<Target, Value>,
                                                transform: @escaping (Output) -> Value) -> CurrentValueObservation<Output, Failure> {
         let closureNeverOb: ClosureNeverObserver<Value> = .init { [weak target] in target?[keyPath: keyPath] = $0 }
         map(transform).subscribe(closureNeverOb)

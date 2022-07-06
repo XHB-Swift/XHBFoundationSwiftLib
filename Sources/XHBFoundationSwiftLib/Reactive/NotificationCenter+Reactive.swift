@@ -42,14 +42,13 @@ extension NotificationCenter.ObservableCenter {
     
     private typealias NotificationObserver = AnyObserver<Notification, Never>
     
-    private final class _ObservableCenterBox: SelectorObserver<Notification> {
+    private final class _ObservableCenterBox: SelectorObserver<Notification, NotificationCenter> {
          
         private var baseArray: ContiguousArray<NotificationObserver>
         
         deinit {
-            let center = self.base as? NotificationCenter
             print("Released _ObservableCenterBoxBase = \(self)")
-            center?.removeObserver(self)
+            self.base.removeObserver(self)
         }
         
         init(_ center: NotificationCenter, _ name: Notification.Name, _ object: AnyObject?) {
