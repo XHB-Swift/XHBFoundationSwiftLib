@@ -9,7 +9,7 @@ import Foundation
 
 extension NotificationCenter {
     
-    public struct ObservableCenter: Observable {
+    public struct Observation: Observable {
         
         public typealias Output = Notification
         public typealias Failure = Never
@@ -33,12 +33,12 @@ extension NotificationCenter {
     }
     
     @discardableResult
-    public func observe(for name: Notification.Name, object: AnyObject? = nil) -> NotificationCenter.ObservableCenter {
+    public func observe(for name: Notification.Name, object: AnyObject? = nil) -> NotificationCenter.Observation {
         return .init(center: self, name: name, object: object)
     }
 }
 
-extension NotificationCenter.ObservableCenter {
+extension NotificationCenter.Observation {
     
     private typealias NotificationObserver = AnyObserver<Notification, Never>
     
