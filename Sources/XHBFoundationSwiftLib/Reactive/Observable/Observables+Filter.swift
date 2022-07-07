@@ -36,7 +36,11 @@ extension Observables {
 
 extension Observables.Filter {
     
-    public func filter(_ isIncluded: @escaping (Observables.Filter<Input>.Output) -> Bool) -> Observables.Filter<Input> {
+    public func filter(_ isIncluded: @escaping (Output) -> Bool) -> Observables.Filter<Input> {
+        return .init(input: input, isIncluded: isIncluded)
+    }
+    
+    public func tryFilter(_ isIncluded: @escaping (Output) throws -> Bool) -> Observables.TryFilter<Input> {
         return .init(input: input, isIncluded: isIncluded)
     }
 }
@@ -44,6 +48,10 @@ extension Observables.Filter {
 extension Observable {
     
     public func filter(_ isIncluded: @escaping (Self.Output) -> Bool) -> Observables.Filter<Self> {
+        return .init(input: self, isIncluded: isIncluded)
+    }
+    
+    public func tryFilter(_ isIncluded: @escaping (Self.Output) throws -> Bool) -> Observables.TryFilter<Self> {
         return .init(input: self, isIncluded: isIncluded)
     }
 }

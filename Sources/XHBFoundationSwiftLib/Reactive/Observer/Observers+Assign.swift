@@ -27,6 +27,7 @@ extension Observers {
             case .receiving(let value):
                 self.object?[keyPath: self.keyPath] = value
             case .failure(_), .finished:
+                self.object = nil
                 break
             }
         }

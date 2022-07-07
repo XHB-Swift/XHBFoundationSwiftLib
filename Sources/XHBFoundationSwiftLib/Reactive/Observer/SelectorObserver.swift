@@ -12,7 +12,7 @@ open class SelectorObserver<Input, Base: NSObject>: Observer {
     public typealias Input = Input
     public typealias Failure = Never
     
-    public let base: Base
+    public weak var base: Base?
     public var closure: ClosureNeverObserver<Input>?
     
     public let selector: Selector = #selector(selectorObserverAction(_:))
@@ -29,5 +29,11 @@ open class SelectorObserver<Input, Base: NSObject>: Observer {
     
     public func receive(_ signal: Observers.Signal<Input, Never>) {
         self.closure?.receive(signal)
+    }
+    
+    deinit {
+#if DEBUG
+        print("Released = \(self)")
+#endif
     }
 }

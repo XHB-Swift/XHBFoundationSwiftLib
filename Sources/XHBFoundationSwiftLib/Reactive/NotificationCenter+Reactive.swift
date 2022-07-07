@@ -47,8 +47,7 @@ extension NotificationCenter.ObservableCenter {
         private var baseArray: ContiguousArray<NotificationObserver>
         
         deinit {
-            print("Released _ObservableCenterBoxBase = \(self)")
-            self.base.removeObserver(self)
+            base?.removeObserver(self)
         }
         
         init(_ center: NotificationCenter, _ name: Notification.Name, _ object: AnyObject?) {

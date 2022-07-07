@@ -35,6 +35,16 @@ extension Observables.Map {
     public func map<T>(_ transform: @escaping (Output) -> T) -> Observables.Map<Input, T> {
         return .init(input: input) { transform(self.transform($0)) }
     }
+    
+    public func tryMap<T>(_ transform: @escaping (Output) throws -> T) -> Observables.TryMap<Input, T> {
+        return .init(input: input) {
+            do {
+                return try transform(self.transform($0))
+            } catch {
+                throw error
+            }
+        }
+    }
 }
 
 extension Observable {

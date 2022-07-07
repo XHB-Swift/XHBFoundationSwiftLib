@@ -39,7 +39,14 @@ extension Observers {
 extension Observable {
     
     public func sink(receiveValue: @escaping (Output) -> Void, receiveFailure: @escaping (Failure) -> Void) {
-        let sink: Observers.Sink = .init(receiveValue: receiveValue, receiveFailure: receiveFailure)
+        let sink: Observers.Sink<Output, Failure> = .init(receiveValue: receiveValue, receiveFailure: receiveFailure)
+        subscribe(sink)
+    }
+}
+
+extension Observable where Failure == Never {
+    public func sink(receiveValue: @escaping (Output) -> Void) {
+        let sink: Observers.Sink<Output, Failure> = .init(receiveValue: receiveValue, receiveFailure: { $0 })
         subscribe(sink)
     }
 }
