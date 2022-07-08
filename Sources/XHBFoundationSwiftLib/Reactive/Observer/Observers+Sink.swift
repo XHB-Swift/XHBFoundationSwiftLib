@@ -9,28 +9,41 @@ import Foundation
 
 extension Observers {
     
-    final public class Sink<Input, Failure>: Observer where Failure: Error {
+    final public class Sink<Input, Failure>: Observer, Cancellable where Failure: Error {
         
         public typealias Input = Input
         
         public var receiveValue: (Input) -> Void
         
-        public var receiveFailure: (Failure) -> Void
+        public var receiveCompletion: (Observers.Completion<Failure>) -> Void
         
-        public init(receiveValue: @escaping (Input) -> Void, receiveFailure: @escaping (Failure) -> Void) {
+        public init(receiveValue: @escaping (Input) -> Void, receiveCompletion: @escaping (Observers.Completion<Failure>) -> Void) {
             self.receiveValue = receiveValue
-            self.receiveFailure = receiveFailure
+            self.receiveCompletion = receiveCompletion
         }
         
-        public func receive(_ signal: Observers.Signal<Input, Failure>) {
-            switch signal {
-            case .receiving(let value):
-                self.receiveValue(value)
+        public func receive(_ input: Input) {
+            self.receiveValue(input)
+        }
+        
+        public func receive(_ completion: Observers.Completion<Failure>) {
+            switch completion {
             case .finished:
-                break
+                self.receiveCompletion(.finished)
             case .failure(let error):
-                self.receiveFailure(error)
+                self.receiveCompletion(.failure(error))
             }
+        }
+        
+        public func cancel() {
+            //receiveValue = nil
+        }
+        
+        deinit {
+            #if DEBUG
+            print("Released = \(self)")
+            #endif
+            cancel()
         }
     }
     
@@ -38,15 +51,15 @@ extension Observers {
 
 extension Observable {
     
-    public func sink(receiveValue: @escaping (Output) -> Void, receiveFailure: @escaping (Failure) -> Void) {
-        let sink: Observers.Sink<Output, Failure> = .init(receiveValue: receiveValue, receiveFailure: receiveFailure)
+    public func sink(receiveValue: @escaping (Output) -> Void, completion: @escaping (Observers.Completion<Failure>) -> Void) {
+        let sink: Observers.Sink<Output, Failure> = .init(receiveValue: receiveValue, receiveCompletion: completion)
         subscribe(sink)
     }
 }
 
 extension Observable where Failure == Never {
     public func sink(receiveValue: @escaping (Output) -> Void) {
-        let sink: Observers.Sink<Output, Failure> = .init(receiveValue: receiveValue, receiveFailure: { $0 })
+        let sink: Observers.Sink<Output, Failure> = .init(receiveValue: receiveValue, receiveCompletion: { _ in })
         subscribe(sink)
     }
 }

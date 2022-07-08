@@ -12,6 +12,10 @@ final public class AnyCancellable: Cancellable, Hashable {
     private var canceller: Cancellable?
     private var cancelClosure: (() -> Void)?
     
+    deinit {
+        cancel()
+    }
+    
     public init(_ cancel: @escaping () -> Void) {
         self.cancelClosure = cancel
     }
@@ -35,5 +39,16 @@ final public class AnyCancellable: Cancellable, Hashable {
     
     public static func == (lhs: AnyCancellable, rhs: AnyCancellable) -> Bool {
         return lhs.hashValue == rhs.hashValue
+    }
+}
+
+extension Cancellable {
+    
+    public func store<C>(in collection: inout C) where C: RangeReplaceableCollection, C.Element == AnyCancellable {
+        collection.append(.init(self))
+    }
+    
+    public func store(in set: inout Set<AnyCancellable>) {
+        set.insert(.init(self))
     }
 }

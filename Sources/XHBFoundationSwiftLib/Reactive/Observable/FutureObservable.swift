@@ -41,7 +41,7 @@ final public class FutureObservable<Output, Failure>: Observable where Failure: 
     private func observerOutput(_ output: Output) {
         var ob = anyObservers.first
         while ob != nil {
-            ob?.receive(.receiving(output))
+            ob?.receive(output)
             _ = anyObservers.removeFirst()
             ob = anyObservers.first
         }

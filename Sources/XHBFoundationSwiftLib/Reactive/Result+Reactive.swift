@@ -34,7 +34,7 @@ extension Result {
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Success == Ob.Input {
             switch self.result {
             case .success(let value):
-                observer.receive(.receiving(value))
+                observer.receive(value)
             case .failure(let error):
                 observer.receive(.failure(error))
             }

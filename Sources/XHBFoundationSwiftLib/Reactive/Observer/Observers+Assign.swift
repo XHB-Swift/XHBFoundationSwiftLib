@@ -22,14 +22,12 @@ extension Observers {
             self.keyPath = keyPath
         }
         
-        public func receive(_ signal: Observers.Signal<Input, Never>) {
-            switch signal {
-            case .receiving(let value):
-                self.object?[keyPath: self.keyPath] = value
-            case .failure(_), .finished:
-                self.object = nil
-                break
-            }
+        public func receive(_ signal: Observers.Completion<Never>) {
+            self.object = nil
+        }
+        
+        public func receive(_ input: Input) {
+            self.object?[keyPath: self.keyPath] = input
         }
     }
 }

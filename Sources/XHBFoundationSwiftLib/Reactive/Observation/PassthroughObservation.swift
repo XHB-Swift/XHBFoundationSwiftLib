@@ -16,7 +16,7 @@ final public class PassthroughObservation<Output, Failure: Error>: Observation {
     public init() {}
     
     public func send(_ value: Output) {
-        anyObserver?.receive(.receiving(value))
+        anyObserver?.receive(value)
     }
     
     public func send(_ failure: Failure) {

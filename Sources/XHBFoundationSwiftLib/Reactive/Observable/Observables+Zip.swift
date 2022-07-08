@@ -71,7 +71,7 @@ extension Observables.Zip {
             let range = 0..<aValueQueue.count
             if !range.contains(emitIndex) { return }
             let a = aValueQueue[emitIndex]
-            middleObserver?.receive(.receiving((a, value)))
+            middleObserver?.receive((a, value))
             aValueQueue.remove(at: emitIndex)
             emitIndex -= 1
         }

@@ -87,7 +87,7 @@ extension Observables.Zip3 {
             if !aRange.contains(aIndex) || !bRange.contains(bIndex) { return }
             let a = aValues[aIndex]
             let b = bValues[bIndex]
-            self.observer?.receive(.receiving((a,b,value)))
+            self.observer?.receive((a,b,value))
             aValues.remove(at: aIndex)
             bValues.remove(at: bIndex)
             aIndex -= 1

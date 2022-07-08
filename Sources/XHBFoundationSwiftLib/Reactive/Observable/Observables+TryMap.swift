@@ -26,7 +26,7 @@ extension Observables {
             let closureObserver: ClosureObserver<Input.Output, Input.Failure> = .init
             {
                 do {
-                    observer.receive(.receiving(try transform($0)))
+                    observer.receive(try transform($0))
                 } catch {
                     observer.receive(.failure(error))
                 }

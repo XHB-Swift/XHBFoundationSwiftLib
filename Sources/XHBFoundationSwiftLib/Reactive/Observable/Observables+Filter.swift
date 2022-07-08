@@ -25,7 +25,7 @@ extension Observables {
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Input.Failure == Ob.Failure, Input.Output == Ob.Input {
             let closureOb: ClosureObserver<Output, Failure> = .init {
                 if !isIncluded($0) { return }
-                observer.receive(.receiving($0))
+                observer.receive($0)
             } _: {
                 observer.receive(.failure($0))
             }

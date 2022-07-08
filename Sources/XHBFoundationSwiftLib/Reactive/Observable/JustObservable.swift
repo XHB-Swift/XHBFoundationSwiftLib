@@ -19,7 +19,7 @@ public struct JustObservable<Output>: Observable {
     }
     
     public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Never == Ob.Failure, Output == Ob.Input {
-        observer.receive(.receiving(output))
+        observer.receive(output)
         observer.receive(.finished)
     }
 }

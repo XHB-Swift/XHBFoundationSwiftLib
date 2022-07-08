@@ -21,7 +21,7 @@ extension Observables {
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Elements.Element == Ob.Input {
-            sequence.forEach { observer.receive(.receiving($0)) }
+            sequence.forEach { observer.receive($0) }
             observer.receive(.finished)
         }
     }

@@ -30,7 +30,7 @@ extension Optional {
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Never == Ob.Failure, Wrapped == Ob.Input {
             guard let wrapped = output else { return }
-            observer.receive(.receiving(wrapped))
+            observer.receive(wrapped)
         }
     }
 }

@@ -18,12 +18,11 @@ public struct ClosureNeverObserver<Input>: Observer {
         self.clousre = closure
     }
     
-    public func receive(_ signal: Observers.Signal<Input, Never>) {
-        switch signal {
-        case .receiving(let value):
-            self.clousre(value)
-        case .failure(_), .finished:
-            break
-        }
+    public func receive(_ input: Input) {
+        self.clousre(input)
+    }
+    
+    public func receive(_ completion: Observers.Completion<Never>) {
+        
     }
 }

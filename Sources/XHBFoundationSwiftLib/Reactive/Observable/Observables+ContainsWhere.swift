@@ -1,30 +1,30 @@
 //
-//  Observables+Contains.swift
+//  Observables+ContainsWhere.swift
 //  
 //
-//  Created by xiehongbiao on 2022/7/7.
+//  Created by xiehongbiao on 2022/7/8.
 //
 
 import Foundation
 
 extension Observables {
     
-    public struct Contains<Input>: Observable where Input: Observable, Input.Output : Equatable {
+    public struct ContainsWhere<Input>: Observable where Input: Observable {
         
         public typealias Output = Bool
         public typealias Failure = Input.Failure
         
         public let input: Input
-        public let output: Input.Output
+        public let predicate: (Input.Output) -> Bool
         
-        public init(input: Input, output: Input.Output) {
+        public init(input: Input, predicate: @escaping (Input.Output) -> Bool) {
             self.input = input
-            self.output = output
+            self.predicate = predicate
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Input.Failure == Ob.Failure, Bool == Ob.Input {
             let closureObserver: ClosureObserver<Input.Output, Failure> = .init({
-                let contains = ($0 == output)
+                let contains = predicate($0)
                 observer.receive(contains)
             }, {
                 observer.receive(.failure($0))
@@ -34,9 +34,9 @@ extension Observables {
     }
 }
 
-extension Observable where Self.Output: Equatable {
+extension Observable {
     
-    public func contains(_ output: Self.Output) -> Observables.Contains<Self> {
-        return .init(input: self, output: output)
+    public func contains(where predicate: @escaping (Output) -> Bool) -> Observables.ContainsWhere<Self> {
+        return .init(input: self, predicate: predicate)
     }
 }

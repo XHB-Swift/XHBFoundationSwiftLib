@@ -26,7 +26,7 @@ final public class CurrentValueObservation<Output, Failure: Error>: Observation 
     
     public func send(_ value: Output) {
         observers.forEach { observer in
-            observer.receive(.receiving(value))
+            observer.receive(value)
         }
     }
     

@@ -28,7 +28,7 @@ extension Observables {
             {
                 do {
                     if try !isIncluded($0) { return }
-                    observer.receive(.receiving($0))
+                    observer.receive($0)
                 } catch {
                     observer.receive(.failure(error))
                 }

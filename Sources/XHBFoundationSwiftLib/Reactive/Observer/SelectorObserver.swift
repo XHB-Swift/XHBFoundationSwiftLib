@@ -24,11 +24,15 @@ open class SelectorObserver<Input, Base: NSObject>: Observer {
     
     @objc public func selectorObserverAction(_ sender: Any) {
         guard let input = sender as? Input else { return }
-        receive(.receiving(input))
+        receive(input)
     }
     
-    public func receive(_ signal: Observers.Signal<Input, Never>) {
-        self.closure?.receive(signal)
+    public func receive(_ input: Input) {
+        self.closure?.receive(input)
+    }
+    
+    public func receive(_ completion: Observers.Completion<Never>) {
+        
     }
     
     deinit {

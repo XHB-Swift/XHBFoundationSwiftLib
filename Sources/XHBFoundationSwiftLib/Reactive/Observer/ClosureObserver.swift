@@ -14,21 +14,26 @@ public struct ClosureObserver<Input, Failure: Error>: Observer {
     
     public let clousre: (Input) -> Void
     public let failure: (Failure) -> Void
+    public var completion: (() -> Void)?
     
     public init(_ closure: @escaping (Input) -> Void,
-                _ failure: @escaping (Failure) -> Void) {
+                _ failure: @escaping (Failure) -> Void,
+                _ completion: (() -> Void)? = nil) {
         self.clousre = closure
         self.failure = failure
+        self.completion = completion
     }
     
-    public func receive(_ signal: Observers.Signal<Input, Failure>) {
+    public func receive(_ signal: Observers.Completion<Failure>) {
         switch signal {
         case .finished:
-            break
-        case .receiving(let value):
-            self.clousre(value)
+            self.completion?()
         case .failure(let error):
             self.failure(error)
         }
+    }
+    
+    public func receive(_ input: Input) {
+        self.clousre(input)
     }
 }
