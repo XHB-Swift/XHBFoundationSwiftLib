@@ -22,7 +22,5 @@ public struct ClosureNeverObserver<Input>: Observer {
         self.clousre(input)
     }
     
-    public func receive(_ completion: Observers.Completion<Never>) {
-        
-    }
+    public func receive(_ completion: Observers.Completion<Never>) {}
 }
