@@ -17,9 +17,16 @@ extension Observers {
         
         public var receiveCompletion: (Observers.Completion<Failure>) -> Void
         
+        private var signal: Signal?
+        
         public init(receiveValue: @escaping (Input) -> Void, receiveCompletion: @escaping (Observers.Completion<Failure>) -> Void) {
             self.receiveValue = receiveValue
             self.receiveCompletion = receiveCompletion
+        }
+        
+        public func receive(_ signal: Signal) {
+            self.signal = signal
+            self.signal?.request(.unlimited)
         }
         
         public func receive(_ input: Input) {
@@ -36,7 +43,8 @@ extension Observers {
         }
         
         public func cancel() {
-            //receiveValue = nil
+            signal?.cancel()
+            signal = nil
         }
         
         deinit {
@@ -51,15 +59,18 @@ extension Observers {
 
 extension Observable {
     
-    public func sink(receiveValue: @escaping (Output) -> Void, completion: @escaping (Observers.Completion<Failure>) -> Void) {
+    public func sink(receiveValue: @escaping (Output) -> Void, completion: @escaping (Observers.Completion<Failure>) -> Void) -> AnyCancellable {
         let sink: Observers.Sink<Output, Failure> = .init(receiveValue: receiveValue, receiveCompletion: completion)
         subscribe(sink)
+        return .init(sink)
     }
 }
 
 extension Observable where Failure == Never {
-    public func sink(receiveValue: @escaping (Output) -> Void) {
+    
+    public func sink(receiveValue: @escaping (Output) -> Void) -> AnyCancellable {
         let sink: Observers.Sink<Output, Failure> = .init(receiveValue: receiveValue, receiveCompletion: { _ in })
         subscribe(sink)
+        return .init(sink)
     }
 }

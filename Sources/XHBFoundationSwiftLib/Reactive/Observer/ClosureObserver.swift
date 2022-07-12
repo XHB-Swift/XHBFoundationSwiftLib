@@ -24,6 +24,10 @@ public struct ClosureObserver<Input, Failure: Error>: Observer {
         self.completion = completion
     }
     
+    public func receive(_ signal: Signal) {
+        signal.request(.unlimited)
+    }
+    
     public func receive(_ signal: Observers.Completion<Failure>) {
         switch signal {
         case .finished:

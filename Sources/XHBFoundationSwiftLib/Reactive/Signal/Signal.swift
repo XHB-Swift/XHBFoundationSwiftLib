@@ -44,9 +44,12 @@ extension Requirement: Equatable {
 extension Requirement: Comparable {
     
     public static func < (lhs: Requirement, rhs: Requirement) -> Bool {
-        guard let lhsNumber = lhs.number,
-              let rhsNumber = rhs.number else { return false }
-        return lhsNumber < rhsNumber
+        guard let lhsNumber = lhs.number else { return rhs != .unlimited }
+        if let rhsNumber = rhs.number {
+            return lhsNumber < rhsNumber
+        } else {
+            return true
+        }
     }
     
     public static func < (lhs: Requirement, rhs: Int) -> Bool {
@@ -60,9 +63,12 @@ extension Requirement: Comparable {
     }
     
     public static func <= (lhs: Requirement, rhs: Requirement) -> Bool {
-        guard let lhsNumber = lhs.number,
-              let rhsNumber = rhs.number else { return true }
-        return lhsNumber <= rhsNumber
+        guard let lhsNumber = lhs.number else { return rhs == .unlimited }
+        if let rhsNumber = rhs.number {
+            return lhsNumber <= rhsNumber
+        } else {
+            return true
+        }
     }
     
     public static func <= (lhs: Requirement, rhs: Int) -> Bool {
@@ -76,9 +82,12 @@ extension Requirement: Comparable {
     }
     
     public static func >= (lhs: Requirement, rhs: Requirement) -> Bool {
-        guard let lhsNumber = lhs.number,
-              let rhsNumber = rhs.number else { return true }
-        return lhsNumber >= rhsNumber
+        guard let lhsNumber = lhs.number else { return true }
+        if let rhsNumber = rhs.number {
+            return lhsNumber >= rhsNumber
+        } else {
+            return false
+        }
     }
     
     public static func >= (lhs: Requirement, rhs: Int) -> Bool {
@@ -92,9 +101,12 @@ extension Requirement: Comparable {
     }
     
     public static func > (lhs: Requirement, rhs: Requirement) -> Bool {
-        guard let lhsNumber = lhs.number,
-              let rhsNumber = rhs.number else { return true }
-        return lhsNumber > rhsNumber
+        guard let lhsNumber = lhs.number else { return rhs != .unlimited }
+        if let rhsNumber = rhs.number {
+            return lhsNumber > rhsNumber
+        } else {
+            return false
+        }
     }
     
     public static func > (lhs: Requirement, rhs: Int) -> Bool {
@@ -124,7 +136,8 @@ extension Requirement {
     public static func + (lhs: Requirement, rhs: Requirement) -> Requirement {
         guard let lhsNumber = lhs.number else { return .unlimited }
         guard let rhsNumber = rhs.number else { return .unlimited }
-        return .max(lhsNumber + rhsNumber)
+        let result = lhsNumber + rhsNumber
+        return .max(result < 0 ? 0 : result)
     }
     
     public static func += (lhs: inout Requirement, rhs: Requirement) {
@@ -133,17 +146,67 @@ extension Requirement {
             lhs = .unlimited
             return
         }
-        lhs = .max(lhsNumber + rhsNumber)
+        let result = lhsNumber + rhsNumber
+        lhs = .max(result < 0 ? 0 : result)
     }
     
     public static func + (lhs: Requirement, rhs: Int) -> Requirement {
         guard let lhsNumber = lhs.number else { return .unlimited }
-        return .max(lhsNumber + rhs)
+        let result = lhsNumber + rhs
+        return .max(result < 0 ? 0 : result)
     }
     
     public static func += (lhs: inout Requirement, rhs: Int) {
         guard let lhsNumber = lhs.number else { return }
-        lhs = .max(lhsNumber + rhs)
+        let result = lhsNumber + rhs
+        lhs = .max(result < 0 ? 0 : result)
     }
     
+    public static func - (lhs: Requirement, rhs: Requirement) -> Requirement {
+        guard let lhsNumber = lhs.number else { return .unlimited }
+        guard let rhsNumber = rhs.number else { return .unlimited }
+        let result = lhsNumber - rhsNumber
+        return .max(result < 0 ? 0 : result)
+    }
+    
+    public static func -= (lhs: inout Requirement, rhs: Requirement) {
+        guard let lhsNumber = lhs.number else { return }
+        guard let rhsNumber = rhs.number else {
+            lhs = .none
+            return
+        }
+        let result = lhsNumber - rhsNumber
+        lhs = .max(result < 0 ? 0 : result)
+    }
+    
+    public static func - (lhs: Requirement, rhs: Int) -> Requirement {
+        guard let lhsNumber = lhs.number else { return .unlimited }
+        let result = lhsNumber - rhs
+        return .max(result < 0 ? 0 : result)
+    }
+    
+    public static func -= (lhs: inout Requirement, rhs: Int) {
+        guard let lhsNumber = lhs.number else { return }
+        let result = lhsNumber - rhs
+        lhs = .max(result < 0 ? 0 : result)
+    }
+    
+    public static func * (lhs: Requirement, rhs: Int) -> Requirement {
+        guard let lhsNumber = lhs.number else { return .unlimited }
+        let result = lhsNumber * rhs
+        return .max(result < 0 ? 0 : result)
+    }
+    
+    public static func *= (lhs: inout Requirement, rhs: Int) {
+        guard let lhsNumber = lhs.number else { return }
+        let result = lhsNumber * rhs
+        lhs = .max(result < 0 ? 0 : result)
+    }
+}
+
+extension Requirement: CustomDebugStringConvertible {
+    
+    public var debugDescription: String {
+        return "Requirement(number: \(number.printedString))"
+    }
 }

@@ -27,7 +27,7 @@ extension Observables {
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, A.Failure == Ob.Failure, (A.Output, B.Output) == Ob.Input {
-            self._valueBuffer.middleObserver = .init(observer)
+            self._valueBuffer.attach(observer)
             self.a.subscribe(self._valueBuffer.aObserver)
             self.b.subscribe(self._valueBuffer.bObserver)
         }
@@ -37,16 +37,15 @@ extension Observables {
 
 extension Observables.Zip {
     
-    fileprivate final class _ZipValueBuffer<A, B> {
+    fileprivate final class _ZipValueBuffer<A, B>: SignalConduit {
         
-        private var aValueQueue: ContiguousArray<A>
-        private var emitIndex: Int = -1
-        private let lock: DispatchSemaphore = .init(value: 1)
+        private var aValues: DataStruct.Queue<A>
+        private var bValue: B?
         
-        var middleObserver: AnyObserver<(A ,B), Failure>?
+        private var observer: AnyObserver<(A ,B), Failure>?
         
         var aObserver: ClosureObserver<A, Failure> {
-            return .init({ [weak self] in self?.aValueQueue.append($0) },
+            return .init({ [weak self] in self?.appendA($0) },
                          { [weak self] in self?.emit($0) })
         }
         
@@ -55,25 +54,47 @@ extension Observables.Zip {
                          { [weak self] in self?.emit($0) })
         }
         
-        init() { aValueQueue = .init() }
+        override init() { aValues = .init() }
         
         private func emit(_ failure: Failure) {
-            middleObserver?.receive(.failure(failure))
+            lock.lock()
+            defer { lock.unlock() }
+            observer?.receive(.failure(failure))
+        }
+        
+        private func appendA(_ value: A) {
+            lock.lock()
+            defer { lock.unlock() }
+            aValues.enqueue(value)
         }
         
         private func emitB(_ value: B) {
-            lock.wait()
-            defer {
-                lock.signal()
+            lock.lock()
+            defer { lock.unlock() }
+            bValue = value
+            send()
+        }
+        
+        override func send() {
+            if aValues.isEmpty { return }
+            while requirement > .none,
+                  let a = aValues.peek(),
+                  let b = bValue {
+                observer?.receive((a, b))
+                _ = aValues.dequeue()
+                bValue = nil
             }
-            if aValueQueue.isEmpty { return }
-            emitIndex += 1
-            let range = 0..<aValueQueue.count
-            if !range.contains(emitIndex) { return }
-            let a = aValueQueue[emitIndex]
-            middleObserver?.receive((a, value))
-            aValueQueue.remove(at: emitIndex)
-            emitIndex -= 1
+        }
+        
+        override func dispose() {
+            aValues.clear()
+            bValue = nil
+            observer = nil
+        }
+        
+        func attach<O: Observer>(_ observer: O) where O.Input == (A, B), O.Failure == Failure {
+            self.observer = .init(observer)
+            self.observer?.receive(self)
         }
         
         deinit {

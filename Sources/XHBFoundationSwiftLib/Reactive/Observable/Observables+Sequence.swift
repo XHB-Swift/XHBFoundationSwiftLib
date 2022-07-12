@@ -53,3 +53,10 @@ extension Observables.Sequence : Equatable where Elements : Equatable {
         return lhs.sequence == rhs.sequence
     }
 }
+
+extension Swift.Sequence {
+    
+    public var observation: Observables.Sequence<Self, Never> {
+        return .init(sequence: self)
+    }
+}

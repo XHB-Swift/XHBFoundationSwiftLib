@@ -15,6 +15,10 @@ final public class PassthroughObservation<Output, Failure: Error>: Observation {
     
     public init() {}
     
+    public func send(_ signal: Signal) {
+        anyObserver?.receive(signal)
+    }
+    
     public func send(_ value: Output) {
         anyObserver?.receive(value)
     }

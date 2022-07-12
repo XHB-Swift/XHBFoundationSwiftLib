@@ -9,7 +9,7 @@ import Foundation
 
 extension Observers {
     
-    final public class Assign<Root, Input>: Observer {
+    final public class Assign<Root, Input>: Observer, Cancellable {
         
         public typealias Input = Input
         public typealias Failure = Never
@@ -22,12 +22,18 @@ extension Observers {
             self.keyPath = keyPath
         }
         
-        public func receive(_ signal: Observers.Completion<Never>) {
-            self.object = nil
+        public func receive(_ signal: Signal) {
+            signal.request(.unlimited)
         }
+        
+        public func receive(_ signal: Observers.Completion<Never>) {}
         
         public func receive(_ input: Input) {
             self.object?[keyPath: self.keyPath] = input
+        }
+        
+        public func cancel() {
+            object = nil
         }
     }
 }

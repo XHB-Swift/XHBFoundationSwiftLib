@@ -24,6 +24,12 @@ final public class CurrentValueObservation<Output, Failure: Error>: Observation 
         self.value = value
     }
     
+    public func send(_ signal: Signal) {
+        observers.forEach { observer in
+            observer.receive(signal)
+        }
+    }
+    
     public func send(_ value: Output) {
         observers.forEach { observer in
             observer.receive(value)

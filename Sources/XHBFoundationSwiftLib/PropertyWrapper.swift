@@ -216,14 +216,12 @@ public struct Localized {
     public var wrappedValue: Value {
         set {
             lock.wait()
+            defer { lock.signal() }
             storedValue = newValue
-            lock.signal()
         }
         get {
             lock.wait()
-            defer {
-                lock.signal()
-            }
+            defer { lock.signal() }
             return storedValue
         }
     }

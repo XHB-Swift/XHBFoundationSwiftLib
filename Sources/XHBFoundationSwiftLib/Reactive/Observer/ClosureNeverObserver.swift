@@ -18,6 +18,10 @@ public struct ClosureNeverObserver<Input>: Observer {
         self.clousre = closure
     }
     
+    public func receive(_ signal: Signal) {
+        signal.request(.unlimited)
+    }
+    
     public func receive(_ input: Input) {
         self.clousre(input)
     }

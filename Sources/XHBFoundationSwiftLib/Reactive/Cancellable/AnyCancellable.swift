@@ -13,6 +13,9 @@ final public class AnyCancellable: Cancellable, Hashable {
     private var cancelClosure: (() -> Void)?
     
     deinit {
+        #if DEBUG
+        print("Released = \(String(describing: self.canceller))")
+        #endif
         cancel()
     }
     

@@ -27,13 +27,13 @@ open class SelectorObserver<Input, Base: NSObject>: Observer {
         receive(input)
     }
     
+    public func receive(_ signal: Signal) {}
+    
     public func receive(_ input: Input) {
         self.closure?.receive(input)
     }
     
-    public func receive(_ completion: Observers.Completion<Never>) {
-        
-    }
+    public func receive(_ completion: Observers.Completion<Never>) {}
     
     deinit {
 #if DEBUG

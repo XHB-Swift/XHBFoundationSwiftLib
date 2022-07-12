@@ -29,7 +29,7 @@ extension Observables {
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, A.Failure == Ob.Failure, (A.Output, B.Output, C.Output) == Ob.Input {
-            self._valueBuffer.observer = .init(observer)
+            self._valueBuffer.attach(observer)
             self.a.subscribe(self._valueBuffer.aObserver)
             self.b.subscribe(self._valueBuffer.bObserver)
             self.c.subscribe(self._valueBuffer.cObserver)
@@ -39,22 +39,20 @@ extension Observables {
 
 extension Observables.Zip3 {
     
-    fileprivate final class _Zip3ValueBuffer<A,B,C> {
+    fileprivate final class _Zip3ValueBuffer<A,B,C>: SignalConduit {
         
-        private var aValues: ContiguousArray<A>
-        private var bValues: ContiguousArray<B>
-        private var aIndex: Int
-        private var bIndex: Int
-        private let lock: DispatchSemaphore = .init(value: 1)
+        private var aValues: DataStruct.Queue<A>
+        private var bValues: DataStruct.Queue<B>
+        private var cValue: C?
         
-        var observer: AnyObserver<(A,B,C), Failure>?
+        private var observer: AnyObserver<(A,B,C), Failure>?
         
         var aObserver: ClosureObserver<A, Failure> {
-            return .init({ [weak self] in self?.aValues.append($0) }, { [weak self] in self?.emit($0) })
+            return .init({ [weak self] in self?.appendA($0) }, { [weak self] in self?.emit($0) })
         }
         
         var bObserver: ClosureObserver<B, Failure> {
-            return .init({ [weak self] in self?.bValues.append($0) }, { [weak self] in self?.emit($0) })
+            return .init({ [weak self] in self?.appendB($0) }, { [weak self] in self?.emit($0) })
         }
         
         var cObserver: ClosureObserver<C, Failure> {
@@ -67,9 +65,7 @@ extension Observables.Zip3 {
             #endif
         }
         
-        init() {
-            aIndex = -1
-            bIndex = -1
+        override init() {
             aValues = .init()
             bValues = .init()
         }
@@ -78,22 +74,43 @@ extension Observables.Zip3 {
             self.observer?.receive(.failure(failure))
         }
         
-        private func emitC(_ value: C) {
-            if aValues.isEmpty || bValues.isEmpty { return }
-            aIndex += 1
-            bIndex += 1
-            let aRange = 0..<aValues.count
-            let bRange = 0..<bValues.count
-            if !aRange.contains(aIndex) || !bRange.contains(bIndex) { return }
-            let a = aValues[aIndex]
-            let b = bValues[bIndex]
-            self.observer?.receive((a,b,value))
-            aValues.remove(at: aIndex)
-            bValues.remove(at: bIndex)
-            aIndex -= 1
-            bIndex -= 1
+        private func appendA(_ value: A) {
+            aValues.enqueue(value)
         }
         
+        private func appendB(_ value: B) {
+            bValues.enqueue(value)
+        }
+        
+        private func emitC(_ value: C) {
+            cValue = value
+            send()
+        }
+        
+        override func send() {
+            if aValues.isEmpty || bValues.isEmpty { return }
+            while requirement > .none,
+                  let a = aValues.peek(),
+                  let b = bValues.peek(),
+                  let c = cValue {
+                self.observer?.receive((a,b,c))
+                _ = aValues.dequeue()
+                _ = bValues.dequeue()
+                cValue = nil
+            }
+        }
+        
+        override func dispose() {
+            aValues.clear()
+            bValues.clear()
+            cValue = nil
+            observer = nil
+        }
+        
+        func attach<O: Observer>(_ observer: O) where O.Input == (A, B, C), O.Failure == Failure {
+            self.observer = .init(observer)
+            self.observer?.receive(self)
+        }
     }
 }
 

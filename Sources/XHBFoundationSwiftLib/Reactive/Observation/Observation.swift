@@ -9,6 +9,8 @@ import Foundation
 
 public protocol Observation: AnyObject, Observable {
     
+    func send(_ signal: Signal)
+    
     func send(_ value: Self.Output)
     
     func send(_ failure: Self.Failure)
