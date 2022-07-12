@@ -27,8 +27,7 @@ extension Observables {
         }
      
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Output == Ob.Input {
-            self._manager.attach(observer)
-            self.input.subscribe(self._manager.nObserver)
+            self._manager.bind(observer: observer, to: input)
         }
     }
 }
@@ -38,12 +37,8 @@ extension Observables.Retry {
     fileprivate final class _RetryManager<Output>: SignalConduit {
         
         private var retries: Int?
+        private var observable: AnyObservable<Output, Failure>?
         private var observer: AnyObserver<Output, Failure>?
-        
-        var nObserver: ClosureObserver<Output, Failure> {
-            return .init({[weak self] in self?.receive($0)},
-                         {[weak self] in self?.receive($0)})
-        }
         
         private func receive(_ value: Output) {
             lock.lock()
@@ -57,12 +52,39 @@ extension Observables.Retry {
             guard let retries = retries else {
                 return
             }
-            if retries == 0 { return }
+            if retries == 0 {
+                self.observer?.receive(.failure(failure))
+                return
+            }
+            self.retries = retries - 1
+            retryHandle()
         }
         
-        func attach<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Output == Ob.Input {
-            self.observer = .init(observer)
+        private func retryHandle() {
             self.observer?.receive(self)
+            let nObserver: ClosureObserver<Output, Failure> = .init({[weak self] in self?.receive($0)},
+                                                                    {[weak self] in self?.receive($0)})
+            self.observable?.subscribe(nObserver)
+        }
+        
+        func bind<Ob: Observable, O: Observer>(observer: O, to observable: Ob)
+        where Output == Ob.Output, Failure == Ob.Failure, Ob.Output == O.Input, Ob.Failure == O.Failure {
+            self.observer = .init(observer)
+            self.observable = .init(observable)
+            retryHandle()
+        }
+        
+        override func dispose() {
+            observer = nil
+            observable = nil
         }
     }
+}
+
+extension Observable {
+    
+    public func retry(_ retries: Int) -> Observables.Retry<Self> {
+        return .init(input: self, retries: retries)
+    }
+    
 }
