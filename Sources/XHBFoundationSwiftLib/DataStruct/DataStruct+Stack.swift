@@ -17,7 +17,7 @@ extension DataStruct {
         public var count: Int { return innerCount }
         public var isEmpty: Bool { return count == 0 }
         
-        init() {
+        public init() {
             storage = .init()
             innerCount = 0
         }

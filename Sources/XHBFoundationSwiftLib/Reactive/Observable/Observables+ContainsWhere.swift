@@ -16,20 +16,16 @@ extension Observables {
         
         public let input: Input
         public let predicate: (Input.Output) -> Bool
+        private let _signalConduit: TransformSignalConduit<Bool, Input.Output, Failure>
         
         public init(input: Input, predicate: @escaping (Input.Output) -> Bool) {
             self.input = input
             self.predicate = predicate
+            self._signalConduit = .init(transform: predicate)
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Input.Failure == Ob.Failure, Bool == Ob.Input {
-            let closureObserver: ClosureObserver<Input.Output, Failure> = .init({
-                let contains = predicate($0)
-                observer.receive(contains)
-            }, {
-                observer.receive(.failure($0))
-            })
-            input.subscribe(closureObserver)
+            self._signalConduit.attach(observer, to: input)
         }
     }
 }

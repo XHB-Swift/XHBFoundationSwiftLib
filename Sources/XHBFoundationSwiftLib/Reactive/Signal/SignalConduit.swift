@@ -7,20 +7,20 @@
 
 import Foundation
 
-open class SignalConduit: Signal {
+class SignalConduit: Signal {
     
     private(set) var requirement: Requirement = .none
-    public let lock: NSRecursiveLock = .init()
+    let lock: NSRecursiveLock = .init()
     
-    public init() {}
+    init() {}
     
-    public func cancel() {
+    func cancel() {
         lock.lock()
         defer { lock.unlock() }
         dispose()
     }
     
-    public func request(_ requirement: Requirement) {
+    func request(_ requirement: Requirement) {
         lock.lock()
         defer { lock.unlock() }
         if requirement == .unlimited {
@@ -31,6 +31,7 @@ open class SignalConduit: Signal {
         send()
     }
     
-    public func send() {}
-    public func dispose() {}
+    func send() {}
+    func dispose() {}
 }
+

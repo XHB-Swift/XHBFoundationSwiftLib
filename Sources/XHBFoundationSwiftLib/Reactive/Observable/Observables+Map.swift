@@ -16,16 +16,16 @@ extension Observables {
         
         public let input: Input
         public let transform: (Input.Output) -> Output
+        private let _signalConduit: TransformSignalConduit<Output, Input.Output, Failure>
         
         public init(input: Input, transform: @escaping (Input.Output) -> Output) {
             self.input = input
             self.transform = transform
+            self._signalConduit = .init(transform: transform)
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Input.Failure == Ob.Failure, Output == Ob.Input {
-            let closureOb: ClosureObserver<Input.Output, Failure> = .init
-            { observer.receive(transform($0)) } _: { observer.receive(.failure($0)) }
-            input.subscribe(closureOb)
+            self._signalConduit.attach(observer, to: input)
         }
     }
 }

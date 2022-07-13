@@ -18,27 +18,32 @@ extension Observables {
         public let input: Input
         public let retries: Int?
         
-        private let _manager: _RetryManager<Output>
+        private let _signalConduit: _RetrySignalConduit<Output>
         
         public init(input: Input, retries: Int?) {
             self.input = input
             self.retries = retries
-            self._manager = .init()
+            self._signalConduit = .init(retries: retries)
         }
      
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Output == Ob.Input {
-            self._manager.bind(observer: observer, to: input)
+            self._signalConduit.bind(observer: observer, to: input)
         }
     }
 }
 
 extension Observables.Retry {
     
-    fileprivate final class _RetryManager<Output>: SignalConduit {
+    fileprivate final class _RetrySignalConduit<Output>: SignalConduit {
         
         private var retries: Int?
         private var observable: AnyObservable<Output, Failure>?
         private var observer: AnyObserver<Output, Failure>?
+        
+        init(retries: Int?) {
+            super.init()
+            self.retries = retries
+        }
         
         private func receive(_ value: Output) {
             lock.lock()
@@ -50,6 +55,7 @@ extension Observables.Retry {
             lock.lock()
             defer { lock.unlock() }
             guard let retries = retries else {
+                retryHandle()
                 return
             }
             if retries == 0 {
@@ -61,10 +67,10 @@ extension Observables.Retry {
         }
         
         private func retryHandle() {
-            self.observer?.receive(self)
             let nObserver: ClosureObserver<Output, Failure> = .init({[weak self] in self?.receive($0)},
                                                                     {[weak self] in self?.receive($0)})
             self.observable?.subscribe(nObserver)
+            self.observer?.receive(self)
         }
         
         func bind<Ob: Observable, O: Observer>(observer: O, to observable: Ob)

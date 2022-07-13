@@ -7,6 +7,8 @@
 
 import Foundation
 
+public typealias ClosureNeverObserver<Input> = ClosureObserver<Input, Never>
+
 public struct ClosureObserver<Input, Failure: Error>: Observer {
     
     public typealias Input = Input
@@ -39,5 +41,14 @@ public struct ClosureObserver<Input, Failure: Error>: Observer {
     
     public func receive(_ input: Input) {
         self.clousre(input)
+    }
+}
+
+extension ClosureObserver where Failure == Never {
+    
+    public init(_ closure: @escaping (Input) -> Void, _ completion: (() -> Void)? = nil) {
+        self.clousre = closure
+        self.failure = { _ in }
+        self.completion = completion
     }
 }
