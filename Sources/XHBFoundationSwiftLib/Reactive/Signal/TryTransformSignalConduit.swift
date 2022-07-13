@@ -19,6 +19,7 @@ final class TryTransformSignalConduit<T, V, E: Error>: ControlSignalConduit<T, E
         do {
             anyObserver?.receive(try tryTransform(value))
         } catch {
+            disposeObservable()
             anyObserver?.receive(.failure(error))
         }
     }

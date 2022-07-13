@@ -21,6 +21,7 @@ class ControlSignalConduit<T, F1: Error, V, F2: Error>: SignalConduit {
     private func _receive(_ value: V) {
         lock.lock()
         defer { lock.unlock() }
+        if anyObservable == nil { return }
         receive(value: value)
     }
     
@@ -36,6 +37,10 @@ class ControlSignalConduit<T, F1: Error, V, F2: Error>: SignalConduit {
         receiveCompletion()
     }
     
+    func disposeObservable() {
+        anyObservable = nil
+    }
+    
     func receive(value: V) {}
     func receive(failure: F2) {}
     func receiveCompletion() {}
@@ -43,7 +48,7 @@ class ControlSignalConduit<T, F1: Error, V, F2: Error>: SignalConduit {
     
     override func dispose() {
         anyObserver = nil
-        anyObservable = nil
+        disposeObservable()
     }
     
     func attach<O: Observer, Ob: Observable>(_ observer: O, to observable: Ob)

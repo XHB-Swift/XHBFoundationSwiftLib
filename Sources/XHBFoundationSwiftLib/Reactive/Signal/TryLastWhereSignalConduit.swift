@@ -22,15 +22,18 @@ final class TryLastWhereSignalConduit<Value, Failure: Error>: ControlSignalCondu
     }
     
     override func receiveCompletion() {
-        buffer.forEach { [weak self] in
-            guard let strongSelf = self else { return }
+        
+        for element in buffer {
             do {
-                guard try strongSelf.predicate($0) else { return }
-                strongSelf.anyObserver?.receive($0)
+                guard try predicate(element) else { continue }
+                anyObserver?.receive(element)
             } catch {
-                strongSelf.anyObserver?.receive(.failure(error))
+                disposeObservable()
+                anyObserver?.receive(.failure(error))
+                return
             }
         }
+        disposeObservable()
         anyObserver?.receive(.finished)
     }
 }

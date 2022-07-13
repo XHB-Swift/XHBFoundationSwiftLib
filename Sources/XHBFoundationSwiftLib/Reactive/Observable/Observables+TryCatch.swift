@@ -16,17 +16,17 @@ extension Observables {
         public typealias Failure = Error
         
         public let source: Source
-        public let handler: (Failure) throws -> New
+        public let handler: (Source.Failure) throws -> New
         
         private let _signalConduit: _TryCatchErrorSignalConduit<Source, New>
         
-        public init(source: Source, handler: @escaping (Failure) throws -> New) {
+        public init(source: Source, handler: @escaping (Source.Failure) throws -> New) {
             self.source = source
             self.handler = handler
             self._signalConduit = .init(handler)
         }
         
-        public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Source.Output == Ob.Input {
+        public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, New.Output == Ob.Input {
             self._signalConduit.attach(observer, to: source)
         }
     }
@@ -34,7 +34,7 @@ extension Observables {
 
 extension Observables.TryCatch {
     
-    fileprivate final class _TryCatchErrorSignalConduit<Old: Observable, New: Observable>: ControlSignalConduit<New.Output, New.Failure, Old.Output, Old.Failure> where Old.Failure == Error {
+    fileprivate final class _TryCatchErrorSignalConduit<Old: Observable, New: Observable>: ControlSignalConduit<New.Output, Error, Old.Output, Old.Failure> where Old.Output == New.Output {
         
         private var newObservable: AnyObservable<New.Output, New.Failure>?
         
@@ -44,17 +44,39 @@ extension Observables.TryCatch {
             self.handler = handler
         }
         
+        override func receive(value: Old.Output) {
+            anyObserver?.receive(value)
+        }
+        
+        override func receiveCompletion() {
+            anyObserver?.receive(.finished)
+        }
+        
         override func receive(failure: Old.Failure) {
+            disposeObservable()
             guard let observer = anyObserver else {
                 return
             }
             do {
-                newObservable = try .init(handler(failure))
-                newObservable?.subscribe(observer)
+                newObservable = .init(try handler(failure))
+                let closure: ClosureObserver<New.Output, New.Failure> =
+                    .init({[weak self] in self?.receive(value: $0)  },
+                          { _ in  },
+                          {[weak self] in self?.receiveCompletion() })
+                newObservable?.subscribe(closure)
                 observer.receive(self)
             } catch {
                 observer.receive(.failure(error))
             }
         }
     }
+}
+
+extension Observable {
+    
+    public func tryCatch<Ob: Observable>(_ handler: @escaping (Failure) throws -> Ob)
+    -> Observables.TryCatch<Self, Ob> where Output == Ob.Output {
+        return .init(source: self, handler: handler)
+    }
+    
 }

@@ -20,6 +20,7 @@ final class TryFilterSignalConduit<T, E: Error>: ControlSignalConduit<T, Error, 
             if try !isIncluded(value) { return }
             anyObserver?.receive(value)
         } catch {
+            disposeObservable()
             anyObserver?.receive(.failure(error))
         }
     }
