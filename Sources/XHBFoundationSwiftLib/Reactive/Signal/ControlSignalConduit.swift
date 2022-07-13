@@ -38,8 +38,6 @@ class ControlSignalConduit<T, F1: Error, V, F2: Error>: SignalConduit {
     }
     
     func disposeObservable() {
-        lock.lock()
-        defer { lock.unlock() }
         anyObservable = nil
     }
     
