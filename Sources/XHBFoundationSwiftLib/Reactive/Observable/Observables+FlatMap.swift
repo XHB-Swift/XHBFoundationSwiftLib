@@ -39,7 +39,7 @@ extension Observables.FlatMap {
         
         var maxObservables: Requirement
         let transform: (Source.Output) -> New
-        private var flatObservables: Dictionary<UUID, BridgePairSignalConduit<New>>
+        private var flatObservables: Dictionary<UUID, OneToAllSignalConduit<New>>
         
         init(maxObservables: Requirement, transform: @escaping (Source.Output) -> New) {
             self.maxObservables = maxObservables
@@ -55,7 +55,7 @@ extension Observables.FlatMap {
             }
             guard anyObserver != nil else { return }
             let newObservable: AnyObservable<New.Output, New.Failure> = .init(transform(value))
-            let newConduit: BridgePairSignalConduit<New> =
+            let newConduit: OneToAllSignalConduit<New> =
                 .init({[weak self] in self?.receiveNew($0, $1)},
                       {[weak self] in self?.receiveNew($0, $1) },
                       {[weak self] in self?.receiveNewCompletion($0)})

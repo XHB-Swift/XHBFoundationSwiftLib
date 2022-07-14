@@ -1,5 +1,5 @@
 //
-//  BridgePairSignalConduit.swift
+//  OneToAllSignalConduit.swift
 //  
 //
 //  Created by xiehongbiao on 2022/7/14.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-class BridgePairSignalConduit<Source: Observable>: SignalConduit {
+class OneToAllSignalConduit<Source: Observable>: SignalConduit {
     
     let receiveValue: (Source.Output, UUID) -> Void
     let receiveFailure: (Source.Failure, UUID) -> Void
