@@ -9,23 +9,23 @@ import Foundation
 
 extension Observables {
     
-    public struct LastWhere<Input: Observable>: Observable {
+    public struct LastWhere<Source: Observable>: Observable {
         
-        public typealias Output = Input.Output
-        public typealias Failure = Input.Failure
+        public typealias Output = Source.Output
+        public typealias Failure = Source.Failure
         
-        public let input: Input
+        public let source: Source
         public let predicate: (Output) -> Bool
         private let _signalConduit: LastWhereSignalConduit<Output, Failure>
         
-        public init(input: Input, predicate: @escaping (Output) -> Bool) {
-            self.input = input
+        public init(source: Source, predicate: @escaping (Output) -> Bool) {
+            self.source = source
             self.predicate = predicate
             self._signalConduit = .init(predicate: predicate)
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Output == Ob.Input {
-            self._signalConduit.attach(observer, to: input)
+            self._signalConduit.attach(observer, to: source)
         }
     }
 }
@@ -33,6 +33,6 @@ extension Observables {
 extension Observable {
     
     public func last(where predicate: @escaping (Output) -> Bool) -> Observables.LastWhere<Self> {
-        return .init(input: self, predicate: predicate)
+        return .init(source: self, predicate: predicate)
     }
 }

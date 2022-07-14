@@ -9,45 +9,45 @@ import Foundation
 
 extension Observables {
     
-    public struct Filter<Input>: Observable where Input: Observable {
+    public struct Filter<Source>: Observable where Source: Observable {
         
-        public typealias Output = Input.Output
-        public typealias Failure = Input.Failure
+        public typealias Output = Source.Output
+        public typealias Failure = Source.Failure
         
-        public let input: Input
-        public let isIncluded: (Input.Output) -> Bool
+        public let source: Source
+        public let isIncluded: (Source.Output) -> Bool
         private let _signalConduit: FilterSignalConduit<Output, Failure>
         
-        public init(input: Input, isIncluded: @escaping (Input.Output) -> Bool) {
-            self.input = input
+        public init(source: Source, isIncluded: @escaping (Source.Output) -> Bool) {
+            self.source = source
             self.isIncluded = isIncluded
             self._signalConduit = .init(isIncluded)
         }
         
-        public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Input.Failure == Ob.Failure, Input.Output == Ob.Input {
-            self._signalConduit.attach(observer, to: input)
+        public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Source.Failure == Ob.Failure, Source.Output == Ob.Input {
+            self._signalConduit.attach(observer, to: source)
         }
     }
 }
 
 extension Observables.Filter {
     
-    public func filter(_ isIncluded: @escaping (Output) -> Bool) -> Observables.Filter<Input> {
-        return .init(input: input, isIncluded: isIncluded)
+    public func filter(_ isIncluded: @escaping (Output) -> Bool) -> Observables.Filter<Source> {
+        return .init(source: source, isIncluded: isIncluded)
     }
     
-    public func tryFilter(_ isIncluded: @escaping (Output) throws -> Bool) -> Observables.TryFilter<Input> {
-        return .init(input: input, isIncluded: isIncluded)
+    public func tryFilter(_ isIncluded: @escaping (Output) throws -> Bool) -> Observables.TryFilter<Source> {
+        return .init(source: source, isIncluded: isIncluded)
     }
 }
 
 extension Observable {
     
     public func filter(_ isIncluded: @escaping (Self.Output) -> Bool) -> Observables.Filter<Self> {
-        return .init(input: self, isIncluded: isIncluded)
+        return .init(source: self, isIncluded: isIncluded)
     }
     
     public func tryFilter(_ isIncluded: @escaping (Self.Output) throws -> Bool) -> Observables.TryFilter<Self> {
-        return .init(input: self, isIncluded: isIncluded)
+        return .init(source: self, isIncluded: isIncluded)
     }
 }

@@ -9,23 +9,23 @@ import Foundation
 
 extension Observables {
     
-    public struct TryLastWhere<Input: Observable>: Observable {
+    public struct TryLastWhere<Source: Observable>: Observable {
         
-        public typealias Output = Input.Output
+        public typealias Output = Source.Output
         public typealias Failure = Error
         
-        public let input: Input
+        public let source: Source
         public let predicate: (Output) throws -> Bool
-        private let _signalConduit: TryLastWhereSignalConduit<Output, Input.Failure>
+        private let _signalConduit: TryLastWhereSignalConduit<Output, Source.Failure>
         
-        public init(input: Input, predicate: @escaping (Output) throws -> Bool) {
-            self.input = input
+        public init(input: Source, predicate: @escaping (Output) throws -> Bool) {
+            self.source = input
             self.predicate = predicate
             self._signalConduit = .init(predicate: predicate)
         }
         
-        public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Input.Output == Ob.Input {
-            self._signalConduit.attach(observer, to: input)
+        public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Source.Output == Ob.Input {
+            self._signalConduit.attach(observer, to: source)
         }
     }
 }

@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class LastWhereSignalConduit<Value, Failure: Error>: ControlSignalConduit<Value, Failure, Value, Failure> {
+final class LastWhereSignalConduit<Value, Failure: Error>: OneToOneSignalConduit<Value, Failure, Value, Failure> {
     
     private var buffer: DataStruct.Queue<Value> = .init()
     

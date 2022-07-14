@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class TransformSignalConduit<T, V, E: Error>: ControlSignalConduit<T, E, V, E> {
+final class TransformSignalConduit<T, V, E: Error>: OneToOneSignalConduit<T, E, V, E> {
     
     let transform: (V) -> T
     

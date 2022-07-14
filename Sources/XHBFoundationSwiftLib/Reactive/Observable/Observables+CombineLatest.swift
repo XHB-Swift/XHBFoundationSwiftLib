@@ -110,6 +110,6 @@ extension Observable {
     
     public func combineLatest<Ob: Observable, T>(_ other: Ob, transform: @escaping (Self.Output, Ob.Output) -> T)
     -> Observables.Map<Observables.CombineLatest<Self,Ob>, T> where Self.Failure == Ob.Failure {
-        return .init(input: self.combineLatest(other), transform: transform)
+        return .init(source: self.combineLatest(other), transform: transform)
     }
 }

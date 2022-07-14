@@ -9,6 +9,7 @@ import Foundation
 
 public protocol Signal: Cancellable {
     
+    var identifier: UUID { get }
     func request(_ requirement: Requirement)
 }
 

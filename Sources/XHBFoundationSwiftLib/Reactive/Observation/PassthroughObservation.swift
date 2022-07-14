@@ -11,23 +11,35 @@ final public class PassthroughObservation<Output, Failure: Error>: Observation {
     
     public typealias Output = Output
     public typealias Failure = Failure
-    private var anyObserver: AnyObserver<Output, Failure>?
+    private var observers: ContiguousArray<AnyObserver<Output, Failure>>
     
-    public init() {}
+    deinit {
+        observers.removeAll()
+    }
+    
+    public init() {
+        observers = .init()
+    }
     
     public func send(_ signal: Signal) {
-        anyObserver?.receive(signal)
+        observers.forEach {
+            $0.receive(signal)
+        }
     }
     
     public func send(_ value: Output) {
-        anyObserver?.receive(value)
+        observers.forEach {
+            $0.receive(value)
+        }
     }
     
     public func send(_ failure: Failure) {
-        anyObserver?.receive(.failure(failure))
+        observers.forEach {
+            $0.receive(.failure(failure))
+        }
     }
     
     public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Output == Ob.Input {
-        anyObserver = .init(observer)
+        observers.append(.init(observer))
     }
 }

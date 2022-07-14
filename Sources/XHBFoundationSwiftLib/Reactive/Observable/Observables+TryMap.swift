@@ -9,31 +9,31 @@ import Foundation
 
 extension Observables {
     
-    public struct TryMap<Input, Output>: Observable where Input: Observable {
+    public struct TryMap<Source, Output>: Observable where Source: Observable {
         
         public typealias Output = Output
         public typealias Failure = Error
         
-        public let input: Input
-        public let transform: (Input.Output) throws -> Output
-        private let _signalConduit: TryTransformSignalConduit<Output, Input.Output, Input.Failure>
+        public let source: Source
+        public let transform: (Source.Output) throws -> Output
+        private let _signalConduit: TryTransformSignalConduit<Output, Source.Output, Source.Failure>
         
-        public init(input: Input, transform: @escaping (Input.Output) throws -> Output) {
-            self.input = input
+        public init(source: Source, transform: @escaping (Source.Output) throws -> Output) {
+            self.source = source
             self.transform = transform
             self._signalConduit = .init(tryTransform: transform)
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Output == Ob.Input {
-            self._signalConduit.attach(observer, to: input)
+            self._signalConduit.attach(observer, to: source)
         }
     }
 }
 
 extension Observables.TryMap {
     
-    public func map<T>(_ transform: @escaping (Output) -> T) -> Observables.TryMap<Input, T> {
-        return .init(input: input) {
+    public func map<T>(_ transform: @escaping (Output) -> T) -> Observables.TryMap<Source, T> {
+        return .init(source: source) {
             do {
                 return try transform(self.transform($0))
             } catch {
@@ -42,8 +42,8 @@ extension Observables.TryMap {
         }
     }
     
-    public func tryMap<T>(_ transform: @escaping (Output) throws -> T) -> Observables.TryMap<Input, T> {
-        return .init(input: input) {
+    public func tryMap<T>(_ transform: @escaping (Output) throws -> T) -> Observables.TryMap<Source, T> {
+        return .init(source: source) {
             do {
                 return try transform(self.transform($0))
             } catch {
@@ -56,6 +56,6 @@ extension Observables.TryMap {
 extension Observable {
     
     public func tryMap<T>(_ transform: @escaping (Output) throws -> T) -> Observables.TryMap<Self, T> {
-        return .init(input: self, transform: transform)
+        return .init(source: self, transform: transform)
     }
 }

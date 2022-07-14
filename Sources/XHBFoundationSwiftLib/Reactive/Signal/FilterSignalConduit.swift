@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class FilterSignalConduit<T, E: Error>: ControlSignalConduit<T, E, T, E> {
+final class FilterSignalConduit<T, E: Error>: OneToOneSignalConduit<T, E, T, E> {
     
     let isIncluded: (T) -> Bool
     

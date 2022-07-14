@@ -11,6 +11,9 @@ class SignalConduit: Signal {
     
     private(set) var requirement: Requirement = .none
     let lock: NSRecursiveLock = .init()
+    let identifier: UUID = .init()
+    
+    deinit { cancel() }
     
     init() {}
     
@@ -34,4 +37,3 @@ class SignalConduit: Signal {
     func send() {}
     func dispose() {}
 }
-

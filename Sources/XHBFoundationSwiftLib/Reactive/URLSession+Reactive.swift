@@ -17,36 +17,44 @@ extension URLSession {
         public let request: URLRequest
         public let session: URLSession
         
-        private let _dataTaskManager: _DataTaskManager
+        private let _signalConduit: _DataTaskSignalConduit
         
         public init(request: URLRequest, session: URLSession) {
             self.request = request
             self.session = session
-            self._dataTaskManager = .init()
+            self._signalConduit = .init()
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Output == Ob.Input {
-            self._dataTaskManager.attach(observer, to: session, request: request)
+            self._signalConduit.attach(observer, to: session, request: request)
         }
     }
 }
 
 extension URLSession.DataTaskOservation {
     
-    fileprivate final class _DataTaskManager: SignalConduit {
+    fileprivate final class _DataTaskSignalConduit: SignalConduit {
         
-        private var observer: AnyObserver<Output, Failure>?
-        private var dataTask: URLSessionDataTask?
+        private struct DataTaskObserver {
+            
+            var dataTask: URLSessionDataTask
+            var observer: AnyObserver<Output, Failure>
+        }
+        
+        private var observers: Dictionary<UUID, DataTaskObserver>
+        
+        override init() {
+            observers = .init()
+        }
         
         override func send() {
             guard requirement > .none else { return }
-            dataTask?.resume()
+            observers.forEach { $1.dataTask.resume() }
         }
         
         override func dispose() {
-            dataTask?.cancel()
-            dataTask = nil
-            observer = nil
+            observers.forEach { $1.dataTask.cancel() }
+            observers.removeAll()
         }
         
         deinit {
@@ -55,26 +63,33 @@ extension URLSession.DataTaskOservation {
             #endif
         }
         
-        private func receive(_ value: Output) {
-            self.observer?.receive(value)
+        private func receive(_ value: Output, _ id: UUID) {
+            guard let dataObserver = observers[id] else { return }
+            dataObserver.observer.receive(value)
+            dataObserver.observer.receive(.finished)
+            observers.removeValue(forKey: id)
         }
         
-        private func receive(_ failure: Failure) {
-            self.observer?.receive(.failure(failure))
+        private func receive(_ failure: Failure, _ id: UUID) {
+            guard let dataObserver = observers[id] else { return }
+            dataObserver.observer.receive(.failure(failure))
+            observers.removeValue(forKey: id)
         }
         
         func attach<Ob>(_ observer: Ob, to session: URLSession, request: URLRequest) where Ob : Observer, Failure == Ob.Failure, Output == Ob.Input {
-            self.observer = .init(observer)
-            self.dataTask = session.dataTask(with: request,
+            let id: UUID = .init()
+            let anyObserver: AnyObserver<Output, Failure> = .init(observer)
+            let dataTask = session.dataTask(with: request,
                                              completionHandler: { [weak self] data, response, error in
                 if let data = data,
                    let response = response {
-                    self?.receive((data, response))
+                    self?.receive((data, response), id)
                 } else if let error = error as? URLError {
-                    self?.receive(error)
+                    self?.receive(error, id)
                 }
             })
-            self.observer?.receive(self)
+            observers[id] = .init(dataTask: dataTask, observer: anyObserver)
+            anyObserver.receive(self)
         }
     }
 }

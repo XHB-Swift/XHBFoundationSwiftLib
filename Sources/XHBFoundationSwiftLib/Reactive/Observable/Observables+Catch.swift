@@ -34,7 +34,7 @@ extension Observables {
 
 extension Observables.Catch {
     
-    fileprivate final class _CatchErrorSignalConduit<Old: Observable, New: Observable>: ControlSignalConduit<New.Output, New.Failure, Old.Output, Old.Failure> {
+    fileprivate final class _CatchErrorSignalConduit<Old: Observable, New: Observable>: OneToOneSignalConduit<New.Output, New.Failure, Old.Output, Old.Failure> {
         
         private var newObservable: AnyObservable<New.Output, New.Failure>?
         

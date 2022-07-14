@@ -132,7 +132,7 @@ extension Observable {
                                                                    _ ob2: Ob2,
                                                                    _ transform: @escaping (Self.Output, Ob1.Output, Ob2.Output) -> T)
     -> Observables.Map<Observables.CombineLatest3<Self, Ob1, Ob2>, T> where Self.Failure == Ob1.Failure, Ob1.Failure == Ob2.Failure {
-        return .init(input: self.combineLatest(ob1, ob2), transform: transform)
+        return .init(source: self.combineLatest(ob1, ob2), transform: transform)
     }
     
 }

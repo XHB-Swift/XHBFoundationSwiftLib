@@ -18,7 +18,7 @@ extension Observables {
         public let source: Source
         public let handler: (Source.Failure) throws -> New
         
-        private let _signalConduit: _TryCatchErrorSignalConduit<Source, New>
+        private let _signalConduit: _TryCatchErrorSignalConduit
         
         public init(source: Source, handler: @escaping (Source.Failure) throws -> New) {
             self.source = source
@@ -34,17 +34,17 @@ extension Observables {
 
 extension Observables.TryCatch {
     
-    fileprivate final class _TryCatchErrorSignalConduit<Old: Observable, New: Observable>: ControlSignalConduit<New.Output, Error, Old.Output, Old.Failure> where Old.Output == New.Output {
+    fileprivate final class _TryCatchErrorSignalConduit: OneToOneSignalConduit<New.Output, Error, Source.Output, Source.Failure> {
         
         private var newObservable: AnyObservable<New.Output, New.Failure>?
         
-        let handler: (Old.Failure) throws -> New
+        let handler: (Source.Failure) throws -> New
         
-        init(_ handler: @escaping (Old.Failure) throws -> New) {
+        init(_ handler: @escaping (Source.Failure) throws -> New) {
             self.handler = handler
         }
         
-        override func receive(value: Old.Output) {
+        override func receive(value: Source.Output) {
             anyObserver?.receive(value)
         }
         
@@ -52,7 +52,7 @@ extension Observables.TryCatch {
             anyObserver?.receive(.finished)
         }
         
-        override func receive(failure: Old.Failure) {
+        override func receive(failure: Source.Failure) {
             disposeObservable()
             guard let observer = anyObserver else {
                 return

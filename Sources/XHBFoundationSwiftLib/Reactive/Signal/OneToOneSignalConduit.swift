@@ -1,5 +1,5 @@
 //
-//  ControlSignalConduit.swift
+//  OneToOneSignalConduit.swift
 //  
 //
 //  Created by xiehongbiao on 2022/7/13.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-class ControlSignalConduit<T, F1: Error, V, F2: Error>: SignalConduit {
+class OneToOneSignalConduit<T, F1: Error, V, F2: Error>: SignalConduit {
     
     private(set) var anyObserver: AnyObserver<T, F1>?
     private(set) var anyObservable: AnyObservable<V, F2>?
@@ -15,7 +15,7 @@ class ControlSignalConduit<T, F1: Error, V, F2: Error>: SignalConduit {
     private var middleObserver: ClosureObserver<V, F2> {
         return .init({ [weak self] in self?._receive($0) },
                      { [weak self] in self?._receive($0) },
-                     { [weak self] in self?.receiveCompletion() })
+                     { [weak self] in self?._receiveCompletion() })
     }
     
     private func _receive(_ value: V) {

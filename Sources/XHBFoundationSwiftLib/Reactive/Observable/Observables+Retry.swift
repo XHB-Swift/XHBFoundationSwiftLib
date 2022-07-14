@@ -10,24 +10,24 @@ import Foundation
 
 extension Observables {
     
-    public struct Retry<Input>: Observable where Input: Observable {
+    public struct Retry<Source>: Observable where Source: Observable {
         
-        public typealias Output = Input.Output
-        public typealias Failure = Input.Failure
+        public typealias Output = Source.Output
+        public typealias Failure = Source.Failure
         
-        public let input: Input
+        public let source: Source
         public let retries: Int?
         
         private let _signalConduit: _RetrySignalConduit<Output>
         
-        public init(input: Input, retries: Int?) {
-            self.input = input
+        public init(source: Source, retries: Int?) {
+            self.source = source
             self.retries = retries
             self._signalConduit = .init(retries: retries)
         }
      
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Output == Ob.Input {
-            self._signalConduit.bind(observer: observer, to: input)
+            self._signalConduit.bind(observer: observer, to: source)
         }
     }
 }
@@ -90,7 +90,7 @@ extension Observables.Retry {
 extension Observable {
     
     public func retry(_ retries: Int) -> Observables.Retry<Self> {
-        return .init(input: self, retries: retries)
+        return .init(source: self, retries: retries)
     }
     
 }

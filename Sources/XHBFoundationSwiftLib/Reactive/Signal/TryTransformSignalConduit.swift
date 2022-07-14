@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class TryTransformSignalConduit<T, V, E: Error>: ControlSignalConduit<T, Error, V, E> {
+final class TryTransformSignalConduit<T, V, E: Error>: OneToOneSignalConduit<T, Error, V, E> {
     
     let tryTransform: (V) throws -> T
     
