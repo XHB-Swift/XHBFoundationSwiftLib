@@ -13,6 +13,8 @@ extension Observers {
         
         public typealias Input = Input
         
+        public let identifier: UUID = .init()
+        
         public var receiveValue: (Input) -> Void
         
         public var receiveCompletion: (Observers.Completion<Failure>) -> Void

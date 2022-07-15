@@ -12,6 +12,8 @@ public struct AnyObserver<Input, Failure: Error>: Observer {
     public typealias Input = Input
     public typealias Failure = Failure
     
+    public let identifier: UUID = .init()
+    
     private var box: _AnyObserverBoxBase<Input, Failure>
     
     public init<O: Observer>(_ observer: O) where O.Input == Input, O.Failure == Failure {
@@ -38,14 +40,20 @@ extension AnyObserver {
         typealias Input = Input
         typealias Failure = Failure
         
+        var identifier: UUID { fatalError("Should use real identifier") }
+        
         func receive(_ signal: Signal) {}
         func receive(_ input: Input) {}
         func receive(_ completion: Observers.Completion<Failure>) {}
     }
     
-    private class _AnyObserverBox<Base: Observer>: _AnyObserverBoxBase<Base.Input, Base.Failure> {
+    private final class _AnyObserverBox<Base: Observer>: _AnyObserverBoxBase<Base.Input, Base.Failure> {
         
         var base: Base
+        
+        override var identifier: UUID {
+            return base.identifier
+        }
         
         init(_ base: Base) {
             self.base = base

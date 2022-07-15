@@ -14,6 +14,8 @@ public struct ClosureObserver<Input, Failure: Error>: Observer {
     public typealias Input = Input
     public typealias Failure = Failure
     
+    public let identifier: UUID = .init()
+    
     public let clousre: (Input) -> Void
     public let failure: (Failure) -> Void
     public var completion: (() -> Void)?

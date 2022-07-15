@@ -14,6 +14,7 @@ extension Observers {
         public typealias Input = Input
         public typealias Failure = Never
         
+        public let identifier: UUID = .init()
         public var object: Root?
         public let keyPath: ReferenceWritableKeyPath<Root, Input>
         

@@ -50,6 +50,7 @@ extension Observables.Decode {
         
         override func receive(failure: Source.Failure) {
             disposeObservable()
+            anyObserver?.receive(.failure(failure))
         }
         
         override func receiveCompletion() {

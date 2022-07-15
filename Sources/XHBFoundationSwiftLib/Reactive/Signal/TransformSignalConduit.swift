@@ -18,4 +18,14 @@ final class TransformSignalConduit<T, V, E: Error>: OneToOneSignalConduit<T, E, 
     override func receive(value: V) {
         anyObserver?.receive(transform(value))
     }
+    
+    override func receive(failure: E) {
+        disposeObservable()
+        anyObserver?.receive(.failure(failure))
+    }
+    
+    override func receiveCompletion() {
+        disposeObservable()
+        anyObserver?.receive(.finished)
+    }
 }

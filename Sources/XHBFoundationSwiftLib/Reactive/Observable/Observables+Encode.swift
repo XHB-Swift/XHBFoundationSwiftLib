@@ -49,6 +49,7 @@ extension Observables.Encode {
         
         override func receive(failure: Source.Failure) {
             disposeObservable()
+            anyObserver?.receive(.failure(failure))
         }
         
         override func receiveCompletion() {

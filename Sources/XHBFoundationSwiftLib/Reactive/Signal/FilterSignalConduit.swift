@@ -19,4 +19,14 @@ final class FilterSignalConduit<T, E: Error>: OneToOneSignalConduit<T, E, T, E> 
         if !isIncluded(value) { return }
         anyObserver?.receive(value)
     }
+    
+    override func receive(failure: E) {
+        disposeObservable()
+        anyObserver?.receive(.failure(failure))
+    }
+    
+    override func receiveCompletion() {
+        disposeObservable()
+        anyObserver?.receive(.finished)
+    }
 }

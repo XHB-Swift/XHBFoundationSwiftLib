@@ -13,6 +13,15 @@ public protocol Signal: Cancellable {
     func request(_ requirement: Requirement)
 }
 
+public enum Signals {}
+
+extension Signals {
+    
+    public static var empty: Signal {
+        return PassSignalConduit<Never, Never>()
+    }
+}
+
 public struct Requirement {
     
     public var number: Int?

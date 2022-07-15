@@ -24,4 +24,14 @@ final class TryFilterSignalConduit<T, E: Error>: OneToOneSignalConduit<T, Error,
             anyObserver?.receive(.failure(error))
         }
     }
+    
+    override func receive(failure: E) {
+        disposeObservable()
+        anyObserver?.receive(.failure(failure))
+    }
+    
+    override func receiveCompletion() {
+        disposeObservable()
+        anyObserver?.receive(.finished)
+    }
 }

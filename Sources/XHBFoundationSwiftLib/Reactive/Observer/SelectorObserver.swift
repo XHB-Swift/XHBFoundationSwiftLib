@@ -14,6 +14,7 @@ open class SelectorObserver<Input, Base: NSObject>: Observer {
     
     public weak var base: Base?
     public var closure: ClosureNeverObserver<Input>?
+    public let identifier: UUID = .init()
     
     public let selector: Selector = #selector(selectorObserverAction(_:))
     
