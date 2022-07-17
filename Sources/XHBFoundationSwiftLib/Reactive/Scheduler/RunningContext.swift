@@ -13,11 +13,12 @@ public protocol RunningContext {
     associatedtype Time: Strideable where Time.Stride: TimeStride
     
     var current: Time { get }
+    var tolerance: Time.Stride { get }
     
     func run(action: @escaping () -> Void)
     func run(options: Options?, _ action: @escaping () -> Void)
-    func run(after time: Time, options: Options?, _ action: @escaping () -> Void)
-    func run(after time: Time, interval: Time.Stride, options: Options?, _ action: @escaping () -> Void)
+    func run(after time: Time, tolerance: Time.Stride, options: Options?, _ action: @escaping () -> Void)
+    func run(after time: Time, interval: Time.Stride, tolerance: Time.Stride, options: Options?, _ action: @escaping () -> Void)
 }
 
 public protocol TimeStride {

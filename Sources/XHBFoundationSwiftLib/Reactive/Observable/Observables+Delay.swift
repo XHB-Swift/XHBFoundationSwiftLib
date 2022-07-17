@@ -66,20 +66,18 @@ extension Observables.Delay {
         override func receive(value: Source.Output) {
             valuesQueue.enqueue(value)
             let after = context.current.advanced(by: interval)
-            if let tolerance = tolerance {
-                context.run(after: after, interval: tolerance, options: options) { [weak self] in
-                    self?.deliveryValue()
-                }
-            } else {
-                context.run(after: after, options: options) {[weak self] in
-                    self?.deliveryValue()
-                }
+            context.run(after: after,
+                        interval: interval,
+                        tolerance: tolerance ?? context.tolerance,
+                        options: options) { [weak self] in
+                self?.deliveryValue()
             }
         }
         
         private func deliveryValue() {
-            guard let v = valuesQueue.dequeue() else { return }
-            super.receive(value: v)
+            while let value = valuesQueue.dequeue() {
+                super.receive(value: value)
+            }
         }
     }
 }

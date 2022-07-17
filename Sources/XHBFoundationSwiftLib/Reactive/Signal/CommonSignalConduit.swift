@@ -38,7 +38,7 @@ class CommonSignalConduit<Value, Failure: Error>: SignalConduit {
     override func send() {
         forEachObserver { [weak self] (_, observer) in
             guard let strongSelf = self else { return }
-            observer.receive(self)
+            observer.receive(strongSelf)
         }
     }
     
