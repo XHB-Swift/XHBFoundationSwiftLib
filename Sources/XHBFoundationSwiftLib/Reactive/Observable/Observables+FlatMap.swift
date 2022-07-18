@@ -24,70 +24,69 @@ extension Observables {
             self.source = source
             self.maxObservables = maxObservables
             self.transform = transform
-            self._signalConduit = .init(maxObservables: maxObservables, transform: transform)
+            self._signalConduit = .init(source: source, maxObservables: maxObservables, transform: transform)
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Output == Ob.Input {
-            self._signalConduit.attach(observer, to: source)
+            self._signalConduit.attach(observer: observer)
         }
     }
 }
 
 extension Observables.FlatMap {
     
-    fileprivate final class _FlatMapSignalConduit: OneToOneSignalConduit<New.Output, New.Failure, Source.Output, Source.Failure> {
+    fileprivate final class _FlatMapSignalConduit: AutoCommonSignalConduit<Source.Output, Source.Failure> {
         
         var maxObservables: Requirement
         let transform: (Source.Output) -> New
-        private var flatObservables: Dictionary<UUID, OneToAllSignalConduit<New>>
+        private var flatObservables: ContiguousArray<AutoCommonSignalConduit<New.Output, New.Failure>>
+        private var newObservers: Dictionary<UUID, AnyObserver<New.Output, Failure>>
         
-        init(maxObservables: Requirement, transform: @escaping (Source.Output) -> New) {
+        init(source: Source, maxObservables: Requirement, transform: @escaping (Source.Output) -> New) {
             self.maxObservables = maxObservables
             self.transform = transform
             self.flatObservables = .init()
+            self.newObservers = .init()
+            super.init(source: source)
         }
         
-        override func receive(value: Source.Output) {
+        override func receiveSignal(_ signal: Signal, _ id: UUID) {
+            newObservers[id]?.receive(self)
+        }
+        
+        override func receiveValue(_ value: Source.Output, _ id: UUID) {
             if maxObservables == .none { return }
             if let maxNumber = maxObservables.number,
                 flatObservables.count == maxNumber {
                 return
             }
-            guard anyObserver != nil else { return }
             let newObservable: AnyObservable<New.Output, New.Failure> = .init(transform(value))
-            let newConduit: OneToAllSignalConduit<New> =
-                .init({[weak self] in self?.receiveNew($0, $1)},
-                      {[weak self] in self?.receiveNew($0, $1) },
-                      {[weak self] in self?.receiveNewCompletion($0)})
-            let id: UUID = newConduit.identifier
-            newConduit.attach(to: newObservable)
-            flatObservables[id] = newConduit
+            let newConduit: AutoCommonSignalConduit<New.Output, New.Failure> = .init(source: newObservable)
+            newObservers.forEach { newConduit.attach(observer: $0.value) }
+            flatObservables.append(newConduit)
         }
         
-        private func receiveNew(_ value: New.Output, _ id: UUID) {
-            lock.lock()
-            defer { lock.unlock() }
-            if maxObservables == .none { return }
-            anyObserver?.receive(value)
+        override func receiveFailure(_ failure: Source.Failure, _ id: UUID) {
+            newObservers[id]?.receive(.failure(failure))
         }
         
-        private func receiveNew(_ failure: New.Failure, _ id: UUID) {
-            lock.lock()
-            defer { lock.unlock() }
-            anyObserver?.receive(.failure(failure))
-            flatObservables.removeValue(forKey: id)
-        }
-        
-        private func receiveNewCompletion(_ id: UUID) {
-            lock.lock()
-            defer { lock.unlock() }
-            anyObserver?.receive(.finished)
-            flatObservables.removeValue(forKey: id)
+        override func receiveCompletion(_ id: UUID) {
+            newObservers[id]?.receive(.finished)
         }
         
         override func dispose() {
             super.dispose()
             flatObservables.removeAll()
+            newObservers.removeAll()
+        }
+        
+        override func attach<O>(observer: O) where Source.Output == O.Input, Source.Failure == O.Failure, O : Observer {
+            fatalError("Should use `attach<O>(observer: O) where New.Output == O.Input, New.Failure == O.Failure, O : Observer`")
+        }
+        
+        func attach<O>(observer: O) where New.Output == O.Input, New.Failure == O.Failure, O : Observer {
+            let id = observer.identifier
+            newObservers[id] = .init(observer)
         }
     }
 }

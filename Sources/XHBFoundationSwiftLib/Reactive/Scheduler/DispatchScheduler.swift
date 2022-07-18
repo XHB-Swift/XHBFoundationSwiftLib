@@ -102,7 +102,7 @@ extension DispatchScheduler {
         }
         
         public func distance(to other: Time) -> Stride {
-            return .init(integerLiteral: Int(dispatchTime.rawValue - other.dispatchTime.rawValue))
+            return .init(.nanoseconds(Int(dispatchTime.uptimeNanoseconds - other.dispatchTime.uptimeNanoseconds)))
         }
         
         public func advanced(by n: Stride) -> Time {
@@ -113,7 +113,7 @@ extension DispatchScheduler {
             hasher.combine(hashValue)
         }
         
-        public struct Stride: Comparable, SignedNumeric, ExpressibleByFloatLiteral, Hashable, TimeStride {
+        public struct Stride: Comparable, SignedNumeric, ExpressibleByFloatLiteral, Hashable, TimeStride, CustomDebugStringConvertible {
             
             public typealias Magnitude = Int
             public typealias FloatLiteralType = Double
@@ -121,6 +121,7 @@ extension DispatchScheduler {
             
             public var magnitude: Int
             public var hashValue: Int { magnitude }
+            public var debugDescription: String { "nanoseconds(\(magnitude))" }
             public var timeInterval: DispatchTimeInterval { return innerTimeInterval }
             private var innerTimeInterval: DispatchTimeInterval
             
@@ -324,7 +325,7 @@ extension DispatchScheduler.Observation {
             } else {
                 t = timer.tolerance
             }
-            timer.run(after: timer.current,
+            timer.run(after: timer.current.advanced(by: .seconds(interval)),
                       interval: .init(floatLiteral: interval),
                       tolerance: t,
                       options: options) { [weak self] in

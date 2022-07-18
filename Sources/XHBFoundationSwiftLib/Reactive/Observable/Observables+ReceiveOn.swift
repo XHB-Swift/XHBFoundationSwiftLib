@@ -24,42 +24,49 @@ extension Observables {
             self.source = source
             self.context = context
             self.options = options
-            self._signalConduit = .init(context: context, options: options)
+            self._signalConduit = .init(source: source, context: context, options: options)
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Output == Ob.Input {
-            self._signalConduit.attach(observer, to: source)
+            self._signalConduit.attach(observer: observer)
         }
     }
 }
 
 extension Observables.ReceiveOn {
     
-    fileprivate final class _ReceiveOnSignalConduit: PassSignalConduit<Source.Output, Source.Failure> {
+    fileprivate final class _ReceiveOnSignalConduit: AutoCommonSignalConduit<Source.Output, Source.Failure> {
         
         let context: Context
         let options: Context.Options?
         
-        init(context: Context, options: Context.Options?) {
+        init(source:Source, context: Context, options: Context.Options?) {
             self.context = context
             self.options = options
+            super.init(source: source)
         }
         
-        override func receive(value: Source.Output) {
-            context.run(options: options) { [weak self] in
-                self?.anyObserver?.receive(value)
+        override func receiveSignal(_ signal: Signal, _ id: UUID) {
+            context.run(options: options) {
+                super.receiveSignal(signal, id)
             }
         }
         
-        override func receive(failure: Source.Failure) {
-            context.run(options: options) { [weak self] in
-                self?.anyObserver?.receive(.failure(failure))
+        override func receiveValue(_ value: Source.Output, _ id: UUID) {
+            context.run(options: options) {
+                super.receiveValue(value, id)
             }
         }
         
-        override func receiveCompletion() {
-            context.run(options: options) { [weak self] in
-                self?.anyObserver?.receive(.finished)
+        override func receiveFailure(_ failure: Source.Failure, _ id: UUID) {
+            context.run(options: options) {
+                super.receiveFailure(failure, id)
+            }
+        }
+        
+        override func receiveCompletion(_ id: UUID) {
+            context.run(options: options) {
+                super.receiveCompletion(id)
             }
         }
     }

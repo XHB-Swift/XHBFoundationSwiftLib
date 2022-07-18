@@ -7,33 +7,60 @@
 
 import Foundation
 
-final class TryLastWhereSignalConduit<Value, Failure: Error>: OneToOneSignalConduit<Value, Error, Value, Failure> {
+final class TryLastWhereSignalConduit<T, E: Error>: AutoCommonSignalConduit<T, E> {
     
-    private var buffer: DataStruct.Queue<Value> = .init()
+    private var buffer: DataStruct.Queue<T> = .init()
+    private var newObservers: Dictionary<UUID, AnyObserver<T,Error>>
     
-    let predicate: (Value) throws -> Bool
+    let predicate: (T) throws -> Bool
     
-    init(predicate: @escaping (Value) throws -> Bool) {
+    init<Source: Observable>(source: Source, predicate: @escaping (T) throws -> Bool)
+    where Source.Output == T, Source.Failure == E  {
         self.predicate = predicate
+        self.newObservers = .init()
+        super.init(source: source)
     }
     
-    override func receive(value: Value) {
+    override func receiveSignal(_ signal: Signal, _ id: UUID) {
+        newObservers[id]?.receive(self)
+    }
+    
+    override func receiveValue(_ value: T, _ id: UUID) {
         buffer.enqueue(value)
     }
     
-    override func receiveCompletion() {
-        
-        for element in buffer {
+    override func receiveFailure(_ failure: E, _ id: UUID) {
+        cancel()
+        newObservers[id]?.receive(.failure(failure))
+    }
+    
+    override func receiveCompletion(_ id: UUID) {
+        while let element = buffer.dequeue() {
             do {
                 guard try predicate(element) else { continue }
-                anyObserver?.receive(element)
+                newObservers[id]?.receive(element)
             } catch {
-                disposeObservable()
-                anyObserver?.receive(.failure(error))
+                cancel()
+                newObservers[id]?.receive(.failure(error))
                 return
             }
         }
-        disposeObservable()
-        anyObserver?.receive(.finished)
+        cancel()
+        newObservers[id]?.receive(.finished)
+    }
+    
+    override func dispose() {
+        super.dispose()
+        newObservers.removeAll()
+    }
+    
+    override func attach<O>(observer: O) where T == O.Input, E == O.Failure, O : Observer {
+        fatalError("Should use `attach<O>(observer: O) where T == O.Input, Error == O.Failure, O : Observer`")
+    }
+    
+    func attach<O>(observer: O) where T == O.Input, Error == O.Failure, O : Observer {
+        let id = observer.identifier
+        newObservers[id] = .init(observer)
+        anySource?.subscribe(makeBridger(id))
     }
 }

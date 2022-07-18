@@ -32,18 +32,22 @@ extension Observables {
             self.interval = interval
             self.tolerance = tolerance
             self.options = options
-            self._signalConduit = .init(context: context, interval: interval, tolerance: tolerance, options: options)
+            self._signalConduit = .init(source:source,
+                                        context: context,
+                                        interval: interval,
+                                        tolerance: tolerance,
+                                        options: options)
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Source.Failure == Ob.Failure, Source.Output == Ob.Input {
-            self._signalConduit.attach(observer, to: source)
+            self._signalConduit.attach(observer: observer)
         }
     }
 }
 
 extension Observables.Delay {
     
-    fileprivate final class _DelaySignalConduit: PassSignalConduit<Source.Output, Source.Failure> {
+    fileprivate final class _DelaySignalConduit: AutoCommonSignalConduit<Output, Failure> {
         
         let context: Context
         let options: Context.Options?
@@ -55,7 +59,7 @@ extension Observables.Delay {
             valuesQueue.clear()
         }
         
-        init(context: Context, interval: Context.Time.Stride, tolerance: Context.Time.Stride?, options: Context.Options? = nil) {
+        init(source: Source, context: Context, interval: Context.Time.Stride, tolerance: Context.Time.Stride?, options: Context.Options? = nil) {
             self.context = context
             self.interval = interval
             self.tolerance = tolerance
@@ -63,19 +67,19 @@ extension Observables.Delay {
             self.valuesQueue = .init()
         }
         
-        override func receive(value: Source.Output) {
+        override func receiveValue(_ value: Observables.Delay<Source, Context>.Output, _ id: UUID) {
             valuesQueue.enqueue(value)
             let after = context.current.advanced(by: interval)
             context.run(after: after,
                         tolerance: tolerance ?? context.tolerance,
                         options: options) { [weak self] in
-                self?.deliveryValue()
+                self?.deliveryValue(id)
             }
         }
         
-        private func deliveryValue() {
+        private func deliveryValue(_ id: UUID) {
             while let value = valuesQueue.dequeue() {
-                super.receive(value: value)
+                super.receiveValue(value, id)
             }
         }
     }

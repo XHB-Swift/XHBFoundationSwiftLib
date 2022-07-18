@@ -21,11 +21,11 @@ extension Observables {
         public init(source: Source, keyPath: KeyPath<Source.Output, Output>) {
             self.source = source
             self.keyPath = keyPath
-            self._signalConduit = .init(transform: { $0[keyPath: keyPath] })
+            self._signalConduit = .init(source: source, transform: { $0[keyPath: keyPath] })
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Source.Failure == Ob.Failure, Output == Ob.Input {
-            self._signalConduit.attach(observer, to: source)
+            self._signalConduit.attach(observer: observer)
         }
     }
 }

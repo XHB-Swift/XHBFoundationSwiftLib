@@ -18,39 +18,69 @@ extension Observables {
         public let source: Source
         public let handler: (Source.Failure) -> New
         
-        private let _signalConduit: _CatchErrorSignalConduit<Source, New>
+        private let _signalConduit: _CatchErrorSignalConduit
         
         public init(source: Source, handler: @escaping (Source.Failure) -> New) {
             self.source = source
             self.handler = handler
-            self._signalConduit = .init(handler)
+            self._signalConduit = .init(source: source, handler)
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, New.Output == Ob.Input {
-            self._signalConduit.attach(observer, to: source)
+            self._signalConduit.attach(observer: observer)
         }
     }
 }
 
 extension Observables.Catch {
     
-    fileprivate final class _CatchErrorSignalConduit<Old: Observable, New: Observable>: OneToOneSignalConduit<New.Output, New.Failure, Old.Output, Old.Failure> {
+    fileprivate final class _CatchErrorSignalConduit: AutoCommonSignalConduit<Source.Output, Source.Failure> {
         
-        private var newObservable: AnyObservable<New.Output, New.Failure>?
+        private var newConduits: ContiguousArray<AutoCommonSignalConduit<New.Output, New.Failure>>
+        private var newObservers: Dictionary<UUID, AnyObserver<New.Output, New.Failure>>
         
-        let handler: (Old.Failure) -> New
+        let handler: (Source.Failure) -> New
         
-        init(_ handler: @escaping (Old.Failure) -> New) {
+        init(source: Source, _ handler: @escaping (Source.Failure) -> New) {
             self.handler = handler
+            self.newConduits = .init()
+            self.newObservers = .init()
+            super.init(source: source)
         }
         
-        override func receive(failure: Old.Failure) {
-            guard let observer = anyObserver else {
-                return
-            }
-            newObservable = .init(handler(failure))
-            newObservable?.subscribe(observer)
-            observer.receive(self)
+        override func receiveSignal(_ signal: Signal, _ id: UUID) {
+            newObservers[id]?.receive(self)
+        }
+        
+        override func receiveValue(_ value: Source.Output, _ id: UUID) {
+            newObservers[id]?.receive(value)
+        }
+        
+        override func receiveFailure(_ failure: Source.Failure, _ id: UUID) {
+            let newObservable = AnyObservable(handler(failure))
+            let newConduit = AutoCommonSignalConduit(source: newObservable)
+            newObservers.forEach { newConduit.attach(observer: $0.value) }
+            newConduits.append(newConduit)
+        }
+        
+        override func receiveCompletion(_ id: UUID) {
+            newObservers[id]?.receive(.finished)
+        }
+        
+        override func dispose() {
+            super.dispose()
+            newObservers.removeAll()
+            newConduits.removeAll()
+        }
+        
+        override func attach<O>(observer: O) where Source.Output == O.Input, Source.Failure == O.Failure, O : Observer {
+            fatalError("Should use `attach<O>(observer: O) where New.Output == O.Input, New.Failure == O.Failure, O : Observer`")
+        }
+        
+        func attach<O>(observer: O) where New.Output == O.Input, New.Failure == O.Failure, O : Observer {
+            let id = observer.identifier
+            newObservers[id] = .init(observer)
+            anySource?.subscribe(makeBridger(id))
         }
     }
 }

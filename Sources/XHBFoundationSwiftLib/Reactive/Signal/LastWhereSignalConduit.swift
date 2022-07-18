@@ -7,26 +7,25 @@
 
 import Foundation
 
-final class LastWhereSignalConduit<Value, Failure: Error>: OneToOneSignalConduit<Value, Failure, Value, Failure> {
+final class LastWhereSignalConduit<Value, Failure: Error>: AutoCommonSignalConduit<Value, Failure> {
     
     private var buffer: DataStruct.Queue<Value> = .init()
     
     let predicate: (Value) -> Bool
     
-    init(predicate: @escaping (Value) -> Bool) {
+    init<Source: Observable>(source: Source, predicate: @escaping (Value) -> Bool) where Source.Output == Value, Source.Failure == Failure {
         self.predicate = predicate
+        super.init(source: source)
     }
     
-    override func receive(value: Value) {
+    override func receiveValue(_ value: Value, _ id: UUID) {
         buffer.enqueue(value)
     }
     
-    override func receiveCompletion() {
-        buffer.forEach { [weak self] in
-            guard let strongSelf = self else { return }
-            guard strongSelf.predicate($0) else { return }
-            strongSelf.anyObserver?.receive($0)
+    override func receiveCompletion(_ id: UUID) {
+        while let element = buffer.dequeue(), predicate(element) {
+            super.receiveValue(element, id)
         }
-        anyObserver?.receive(.finished)
+        super.receiveCompletion(id)
     }
 }

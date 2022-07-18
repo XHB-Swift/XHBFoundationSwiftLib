@@ -18,18 +18,18 @@ extension Observables {
         public let source: Source
         public let context: Context
         public let options: Context.Options?
-        private let _signalConduit: PassSignalConduit<Source.Output, Source.Failure>
+        private let _signalConduit: AutoCommonSignalConduit<Source.Output, Source.Failure>
         
         public init(source: Source, context: Context, options: Context.Options?) {
             self.source = source
             self.context = context
             self.options = options
-            self._signalConduit = .init()
+            self._signalConduit = .init(source: source)
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Source.Failure == Ob.Failure, Source.Output == Ob.Input {
             context.run(options: options) {
-                self._signalConduit.attach(observer, to: source)
+                self._signalConduit.attach(observer: observer)
             }
         }
     }

@@ -12,12 +12,13 @@ public struct AnyObserver<Input, Failure: Error>: Observer {
     public typealias Input = Input
     public typealias Failure = Failure
     
-    public let identifier: UUID = .init()
+    public var identifier: UUID
     
     private var box: _AnyObserverBoxBase<Input, Failure>
     
     public init<O: Observer>(_ observer: O) where O.Input == Input, O.Failure == Failure {
         self.box = _AnyObserverBox(observer)
+        self.identifier = observer.identifier
     }
     
     public func receive(_ signal: Signal) {

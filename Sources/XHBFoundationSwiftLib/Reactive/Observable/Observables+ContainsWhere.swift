@@ -21,11 +21,11 @@ extension Observables {
         public init(source: Source, predicate: @escaping (Source.Output) -> Bool) {
             self.source = source
             self.predicate = predicate
-            self._signalConduit = .init(transform: predicate)
+            self._signalConduit = .init(source:source, transform: predicate)
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Source.Failure == Ob.Failure, Bool == Ob.Input {
-            self._signalConduit.attach(observer, to: source)
+            self._signalConduit.attach(observer: observer)
         }
     }
 }

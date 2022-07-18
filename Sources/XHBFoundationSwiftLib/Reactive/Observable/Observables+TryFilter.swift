@@ -22,11 +22,11 @@ extension Observables {
         public init(source: Source, isIncluded: @escaping (Source.Output) throws -> Bool) {
             self.source = source
             self.isIncluded = isIncluded
-            self._signalConduit = .init(isIncluded)
+            self._signalConduit = .init(source: source, isIncluded)
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Source.Output == Ob.Input {
-            self._signalConduit.attach(observer, to: source)
+            self._signalConduit.attach(observer: observer)
         }
     }
 }

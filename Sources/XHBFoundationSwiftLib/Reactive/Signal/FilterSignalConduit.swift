@@ -7,26 +7,17 @@
 
 import Foundation
 
-final class FilterSignalConduit<T, E: Error>: OneToOneSignalConduit<T, E, T, E> {
+final class FilterSignalConduit<T, E: Error>: AutoCommonSignalConduit<T, E> {
     
     let isIncluded: (T) -> Bool
     
-    init(_ isIncluded: @escaping (T) -> Bool) {
+    init<Source: Observable>(source: Source, _ isIncluded: @escaping (T) -> Bool) where Source.Output == T, Source.Failure == E {
         self.isIncluded = isIncluded
+        super.init(source: source)
     }
     
-    override func receive(value: T) {
+    override func receiveValue(_ value: T, _ id: UUID) {
         if !isIncluded(value) { return }
-        anyObserver?.receive(value)
-    }
-    
-    override func receive(failure: E) {
-        disposeObservable()
-        anyObserver?.receive(.failure(failure))
-    }
-    
-    override func receiveCompletion() {
-        disposeObservable()
-        anyObserver?.receive(.finished)
+        super.receiveValue(value, id)
     }
 }

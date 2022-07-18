@@ -9,23 +9,23 @@ import Foundation
 
 extension Observables {
     
-    public struct Contains<Input>: Observable where Input: Observable, Input.Output : Equatable {
+    public struct Contains<Source>: Observable where Source: Observable, Source.Output : Equatable {
         
         public typealias Output = Bool
-        public typealias Failure = Input.Failure
+        public typealias Failure = Source.Failure
         
-        public let input: Input
-        public let output: Input.Output
-        private let _signalConduit: TransformSignalConduit<Bool, Input.Output, Failure>
+        public let input: Source
+        public let output: Source.Output
+        private let _signalConduit: TransformSignalConduit<Bool, Source.Output, Failure>
         
-        public init(input: Input, output: Input.Output) {
-            self.input = input
+        public init(source: Source, output: Source.Output) {
+            self.input = source
             self.output = output
-            self._signalConduit = .init(transform: { $0 == output })
+            self._signalConduit = .init(source:source, transform: { $0 == output })
         }
         
-        public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Input.Failure == Ob.Failure, Bool == Ob.Input {
-            self._signalConduit.attach(observer, to: input)
+        public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Source.Failure == Ob.Failure, Bool == Ob.Input {
+            self._signalConduit.attach(observer: observer)
         }
     }
 }
@@ -33,6 +33,6 @@ extension Observables {
 extension Observable where Self.Output: Equatable {
     
     public func contains(_ output: Self.Output) -> Observables.Contains<Self> {
-        return .init(input: self, output: output)
+        return .init(source: self, output: output)
     }
 }

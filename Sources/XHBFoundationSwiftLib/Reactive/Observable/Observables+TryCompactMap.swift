@@ -20,32 +20,62 @@ extension Observables {
         public init(source: Source, transform: @escaping (Source.Output) throws -> Output?) {
             self.source = source
             self.transform = transform
-            self._signalConduit = .init(transform)
+            self._signalConduit = .init(source:source, transform)
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Output == Ob.Input {
-            self._signalConduit.attach(observer, to: source)
+            self._signalConduit.attach(observer: observer)
         }
     }
 }
 
 extension Observables.TryCompactMap {
     
-    fileprivate final class _TryCompactMapSignalConduit: OneToOneSignalConduit<Output, Failure, Source.Output, Source.Failure> {
+    fileprivate final class _TryCompactMapSignalConduit: AutoCommonSignalConduit<Source.Output, Source.Failure> {
         
         let transform: (Source.Output) throws -> Output?
+        private var newObservers: Dictionary<UUID, AnyObserver<Output, Failure>>
         
-        init(_ transform: @escaping (Source.Output) throws -> Output?) {
+        init(source: Source, _ transform: @escaping (Source.Output) throws -> Output?) {
             self.transform = transform
+            self.newObservers = .init()
+            super.init(source: source)
         }
         
-        override func receive(value: Source.Output) {
+        override func receiveSignal(_ signal: Signal, _ id: UUID) {
+            newObservers[id]?.receive(signal)
+        }
+        
+        override func receiveValue(_ value: Source.Output, _ id: UUID) {
             do {
                 guard let v = try transform(value) else { return }
-                anyObserver?.receive(v)
+                newObservers[id]?.receive(v)
             } catch {
-                anyObserver?.receive(.failure(error))
+                newObservers[id]?.receive(.failure(error))
             }
+        }
+        
+        override func receiveFailure(_ failure: Source.Failure, _ id: UUID) {
+            cancel()
+            newObservers[id]?.receive(.failure(failure))
+        }
+        
+        override func receiveCompletion(_ id: UUID) {
+            newObservers[id]?.receive(.finished)
+        }
+        
+        override func dispose() {
+            newObservers.removeAll()
+        }
+        
+        override func attach<O>(observer: O) where Source.Output == O.Input, Source.Failure == O.Failure, O : Observer {
+            fatalError("attach<O>(observer: O) where Output == O.Input, Failure == O.Failure, O : Observer")
+        }
+        
+        func attach<O>(observer: O) where Output == O.Input, Failure == O.Failure, O : Observer {
+            let id = observer.identifier
+            newObservers[id] = .init(observer)
+            anySource?.subscribe(makeBridger(id))
         }
     }
 }

@@ -51,7 +51,7 @@ extension Observers {
         
         deinit {
             #if DEBUG
-            print("Released = \(self)")
+            print("Released = \(self), Signal = \(String(describing: signal))")
             #endif
             cancel()
         }
@@ -71,8 +71,6 @@ extension Observable {
 extension Observable where Failure == Never {
     
     public func sink(receiveValue: @escaping (Output) -> Void) -> AnyCancellable {
-        let sink: Observers.Sink<Output, Failure> = .init(receiveValue: receiveValue, receiveCompletion: { _ in })
-        subscribe(sink)
-        return .init(sink)
+        return sink(receiveValue: receiveValue, completion: { _ in })
     }
 }

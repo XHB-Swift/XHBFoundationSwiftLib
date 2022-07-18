@@ -14,7 +14,7 @@ final public class AnyCancellable: Cancellable, Hashable {
     
     deinit {
         #if DEBUG
-        print("Released = \(String(describing: self.canceller))")
+        print("Released = \(String(describing: canceller))")
         #endif
         cancel()
     }

@@ -19,6 +19,7 @@ public struct ClosureObserver<Input, Failure: Error>: Observer {
     public let clousre: (Input) -> Void
     public let failure: (Failure) -> Void
     public var completion: (() -> Void)?
+    public var _signal: ((Signal) -> Void)?
     
     public init(_ closure: @escaping (Input) -> Void,
                 _ failure: @escaping (Failure) -> Void,
@@ -29,6 +30,7 @@ public struct ClosureObserver<Input, Failure: Error>: Observer {
     }
     
     public func receive(_ signal: Signal) {
+        self._signal?(signal)
         signal.request(.unlimited)
     }
     

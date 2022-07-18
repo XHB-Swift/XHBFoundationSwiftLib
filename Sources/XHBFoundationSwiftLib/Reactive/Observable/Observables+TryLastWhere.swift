@@ -18,14 +18,14 @@ extension Observables {
         public let predicate: (Output) throws -> Bool
         private let _signalConduit: TryLastWhereSignalConduit<Output, Source.Failure>
         
-        public init(input: Source, predicate: @escaping (Output) throws -> Bool) {
-            self.source = input
+        public init(source: Source, predicate: @escaping (Output) throws -> Bool) {
+            self.source = source
             self.predicate = predicate
-            self._signalConduit = .init(predicate: predicate)
+            self._signalConduit = .init(source: source, predicate: predicate)
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Source.Output == Ob.Input {
-            self._signalConduit.attach(observer, to: source)
+            self._signalConduit.attach(observer: observer)
         }
     }
 }
@@ -33,7 +33,7 @@ extension Observables {
 extension Observable {
     
     public func tryLast(where predicate: @escaping (Output) throws -> Bool) -> Observables.TryLastWhere<Self> {
-        return .init(input: self, predicate: predicate)
+        return .init(source: self, predicate: predicate)
     }
     
 }
