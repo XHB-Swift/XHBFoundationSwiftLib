@@ -61,15 +61,16 @@ extension Observables.TryCatch {
                 let new = try handler(failure)
                 let newObservable: AnyObservable<Output, New.Failure>  = .init(new)
                 let newConduit: AutoCommonSignalConduit<Output, New.Failure> = .init(source: newObservable)
-                let newObserver: ClosureObserver<Output, New.Failure> = .init({ [weak self] value in
-                    self?.newObservers.forEach { $0.value.receive(value) }
-                },
-                                                                              { [weak self] failure in
-                    self?.newObservers.forEach { $0.value.receive(.failure(failure)) }
+                var newObserver: ClosureObserver<Output, New.Failure> = .init({ [weak self] in
+                    self?.bridgeReceive($0)
                 },
                                                                               { [weak self] in
-                    self?.newObservers.forEach { $0.value.receive(.finished) }
+                    self?.bridgeReceive($0)
+                },
+                                                                              { [weak self] in
+                    self?.bridgeReceiveCompletion()
                 })
+                newObserver._signal = { [weak self] in self?.bridgeReceive($0) }
                 newConduit.attach(observer: newObserver)
                 newConduits.append(newConduit)
             } catch {
@@ -79,6 +80,22 @@ extension Observables.TryCatch {
         
         override func receiveCompletion(_ id: UUID) {
             newObservers[id]?.receive(.finished)
+        }
+        
+        private func bridgeReceive(_ signal: Signal) {
+            newObservers.forEach { $0.value.receive(self) }
+        }
+        
+        private func bridgeReceive(_ value: Output) {
+            newObservers.forEach { $0.value.receive(value) }
+        }
+        
+        private func bridgeReceive(_ failure: New.Failure) {
+            newObservers.forEach { $0.value.receive(.failure(failure)) }
+        }
+        
+        private func bridgeReceiveCompletion() {
+            newObservers.forEach { $0.value.receive(.finished) }
         }
         
         override func attach<O>(observer: O) where Source.Output == O.Input, Source.Failure == O.Failure, O : Observer {

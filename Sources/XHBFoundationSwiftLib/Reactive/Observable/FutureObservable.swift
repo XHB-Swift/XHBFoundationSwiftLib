@@ -14,7 +14,13 @@ final public class FutureObservable<Output, Failure>: Observable where Failure: 
     
     private var output: Output?
     private var failure: Failure?
-    private var anyObservers: ContiguousArray<AnyObserver<Output, Failure>> = .init()
+    private lazy var _signalConduit: AutoCommonSignalConduit<Output, Failure> = .init(source: self)
+    
+    deinit {
+        #if DEBUG
+        print("Released = \(self)")
+        #endif
+    }
     
     public init(_ fulfillClosure: @escaping (@escaping PromiseClosure) -> Void) {
         fulfillClosure({ [weak self] result in
@@ -30,7 +36,8 @@ final public class FutureObservable<Output, Failure>: Observable where Failure: 
     }
     
     public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Failure == Ob.Failure, Output == Ob.Input {
-        anyObservers.append(.init(observer))
+        _signalConduit.add(observer: observer)
+        observer.receive(_signalConduit)
         if let value = output {
             observerOutput(value)
         } else if let failure = failure {
@@ -39,20 +46,14 @@ final public class FutureObservable<Output, Failure>: Observable where Failure: 
     }
     
     private func observerOutput(_ output: Output) {
-        var ob = anyObservers.first
-        while ob != nil {
-            ob?.receive(output)
-            _ = anyObservers.removeFirst()
-            ob = anyObservers.first
+        _signalConduit.forEachObserver { _, observer in
+            observer.receive(output)
         }
     }
     
     private func observerReceive(_ failure: Failure) {
-        var ob = anyObservers.first
-        while ob != nil {
-            ob?.receive(.failure(failure))
-            _ = anyObservers.removeFirst()
-            ob = anyObservers.first
+        _signalConduit.forEachObserver { _, observer in
+            observer.receive(.failure(failure))
         }
     }
 }

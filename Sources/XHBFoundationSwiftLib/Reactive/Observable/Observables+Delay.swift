@@ -59,12 +59,17 @@ extension Observables.Delay {
             valuesQueue.clear()
         }
         
-        init(source: Source, context: Context, interval: Context.Time.Stride, tolerance: Context.Time.Stride?, options: Context.Options? = nil) {
+        init(source: Source,
+             context: Context,
+             interval: Context.Time.Stride,
+             tolerance: Context.Time.Stride?,
+             options: Context.Options? = nil) {
             self.context = context
             self.interval = interval
             self.tolerance = tolerance
             self.options = options
             self.valuesQueue = .init()
+            super.init(source: source)
         }
         
         override func receiveValue(_ value: Observables.Delay<Source, Context>.Output, _ id: UUID) {

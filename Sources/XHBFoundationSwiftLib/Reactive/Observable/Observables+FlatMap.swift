@@ -87,6 +87,7 @@ extension Observables.FlatMap {
         func attach<O>(observer: O) where New.Output == O.Input, New.Failure == O.Failure, O : Observer {
             let id = observer.identifier
             newObservers[id] = .init(observer)
+            anySource?.subscribe(makeBridger(id))
         }
     }
 }

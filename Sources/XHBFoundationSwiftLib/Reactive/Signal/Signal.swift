@@ -18,7 +18,7 @@ public enum Signals {}
 extension Signals {
     
     public static var empty: Signal {
-        return AutoCommonSignalConduit<Never, Never>()
+        return SignalConduit()
     }
 }
 

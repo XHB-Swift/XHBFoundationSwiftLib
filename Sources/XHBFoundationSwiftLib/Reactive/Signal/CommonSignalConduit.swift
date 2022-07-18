@@ -13,8 +13,10 @@ class CommonSignalConduit<Value, Failure: Error>: SignalConduit {
     private var allObservers: Dictionary<UUID, AnyObserver<Value, Failure>>
     private var signal: Signal?
     
-    init<S: Observable>(source: S) where S.Output == Value, S.Failure == Failure {
-        anySource = .init(source)
+    init<S: Observable>(source: S? = nil) where S.Output == Value, S.Failure == Failure {
+        if let s = source {
+            anySource = .init(s)
+        }
         allObservers = .init()
     }
     
@@ -55,13 +57,6 @@ class CommonSignalConduit<Value, Failure: Error>: SignalConduit {
         allObservers.forEach(action)
     }
     
-    override func send() {
-        forEachObserver { [weak self] (_, observer) in
-            guard let strongSelf = self else { return }
-            observer.receive(strongSelf)
-        }
-    }
-    
     override func dispose() {
         signal?.cancel()
         signal = nil
@@ -93,9 +88,13 @@ class CommonSignalConduit<Value, Failure: Error>: SignalConduit {
         receiveCompletion(id)
     }
     
-    func attach<O: Observer>(observer: O) where O.Input == Value, O.Failure == Failure {
+    func add<O: Observer>(observer: O) where O.Input == Value, O.Failure == Failure {
         let id = observer.identifier
         allObservers[id] = .init(observer)
-        anySource?.subscribe(makeBridger(id))
+    }
+    
+    func attach<O: Observer>(observer: O) where O.Input == Value, O.Failure == Failure {
+        add(observer: observer)
+        anySource?.subscribe(makeBridger(observer.identifier))
     }
 }
