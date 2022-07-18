@@ -67,7 +67,6 @@ extension Observables.Delay {
             valuesQueue.enqueue(value)
             let after = context.current.advanced(by: interval)
             context.run(after: after,
-                        interval: interval,
                         tolerance: tolerance ?? context.tolerance,
                         options: options) { [weak self] in
                 self?.deliveryValue()
