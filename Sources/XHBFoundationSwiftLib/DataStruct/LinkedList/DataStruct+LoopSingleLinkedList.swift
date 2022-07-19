@@ -11,8 +11,8 @@ extension DataStruct {
     
     public struct LoopSingleLinkedList<Element> {
         
-        internal var front: LinkedListNode<Element>?
-        internal var rear: LinkedListNode<Element>?
+        internal var front: SingleLinkedListNode<Element>?
+        internal var rear: SingleLinkedListNode<Element>?
         
         public var count: Int { innerCount }
         public var isEmpty: Bool { count == 0 }
@@ -22,7 +22,7 @@ extension DataStruct {
         public init<S: Sequence>(_ s: S) where Element == S.Element {
             var iterator = s.makeIterator()
             while let element = iterator.next() {
-                let node = LinkedListNode(storage: element, next: nil)
+                let node = SingleLinkedListNode(storage: element, next: nil)
                 innerCount += 1
                 if innerCount == 1 {
                     front = node
@@ -35,7 +35,7 @@ extension DataStruct {
         }
         
         mutating public func insert(_ element: Element, at index: Int) {
-            let new = LinkedListNode<Element>(storage: element, next: nil)
+            let new = SingleLinkedListNode<Element>(storage: element, next: nil)
             if index == 0 {
                 new.next = front
                 front = new
@@ -99,19 +99,31 @@ extension DataStruct {
 extension DataStruct.LoopSingleLinkedList: Swift.Sequence {
     
     public typealias Element = Element
-    public typealias Iterator = Swift.AnyIterator<Element>
     
-    public func makeIterator() -> AnyIterator<Element> {
+    public struct Iterator: IteratorProtocol {
         
-        var temp = front
-        return .init {
-            let storage = temp?.storage
-            temp = temp?.next
-            if temp === front {
-                return nil
-            }
+        internal var _storage: SingleLinkedListNode<Element>?
+        internal var _begin: SingleLinkedListNode<Element>?
+        internal var _next: SingleLinkedListNode<Element>?
+        internal var _stop = false
+        
+        internal init(_begin: SingleLinkedListNode<Element>?) {
+            self._storage = _begin
+            self._begin = _begin
+            self._next = _begin?.next
+        }
+        
+        mutating public func next() -> Element? {
+            if _stop { return nil }
+            let storage = _storage?.storage
+            _storage = _storage?.next
+            _stop = (_begin === _storage)
             return storage
         }
+    }
+    
+    public func makeIterator() -> Iterator {
+        return .init(_begin: front)
     }
 }
 

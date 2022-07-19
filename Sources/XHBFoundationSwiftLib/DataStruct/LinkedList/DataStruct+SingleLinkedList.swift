@@ -11,8 +11,8 @@ extension DataStruct {
     
     public struct SingleLinkedList<Element> {
         
-        private var front: LinkedListNode<Element>?
-        private var rear: LinkedListNode<Element>?
+        private var front: SingleLinkedListNode<Element>?
+        private var rear: SingleLinkedListNode<Element>?
         
         public var count: Int { innerCount }
         public var isEmpty: Bool { count == 0 }
@@ -24,7 +24,7 @@ extension DataStruct {
         public init<S: Sequence>(_ s: S) where Element == S.Element {
             var iterator = s.makeIterator()
             while let element = iterator.next() {
-                let node = LinkedListNode(storage: element, next: nil)
+                let node = SingleLinkedListNode(storage: element, next: nil)
                 innerCount += 1
                 if innerCount == 1 {
                     front = node
@@ -54,7 +54,7 @@ extension DataStruct {
         }
         
         mutating public func insert(_ element: Element, at index: Int) {
-            let new = LinkedListNode<Element>(storage: element, next: nil)
+            let new = SingleLinkedListNode<Element>(storage: element, next: nil)
             if index == 0 {
                 new.next = front
                 front = new
