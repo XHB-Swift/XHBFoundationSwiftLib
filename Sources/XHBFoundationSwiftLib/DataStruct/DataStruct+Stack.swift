@@ -12,19 +12,16 @@ extension DataStruct {
     public struct Stack<Element> {
         
         private var storage: ContiguousArray<Element>
-        private var innerCount: Int
         
-        public var count: Int { return innerCount }
-        public var isEmpty: Bool { return count == 0 }
+        public var count: Int { return storage.count }
+        public var isEmpty: Bool { return storage.isEmpty }
         
         public init() {
             storage = .init()
-            innerCount = 0
         }
         
         mutating public func push(_ element: Element) {
             storage.append(element)
-            innerCount += 1
         }
         
         mutating public func pop() -> Element? {
@@ -42,26 +39,22 @@ extension DataStruct {
         mutating public func clear() {
             if isEmpty { return }
             storage.removeAll()
-            innerCount = 0
         }
     }
 }
 
-extension DataStruct.Stack: Sequence {
+extension DataStruct.Stack: Swift.Sequence {
     
     public typealias Element = Element
     public typealias Iterator = AnyIterator<Element>
     
     public func makeIterator() -> AnyIterator<Element> {
-        var i = innerCount - 1
-        var innerCount = innerCount
-        return .init {
-            if innerCount == 0 { return nil }
-            defer {
-                innerCount -= 1
-                i -= 1
-            }
-            return self.storage[i]
-        }
+        return .init(storage.reversed().makeIterator())
     }
+}
+
+extension DataStruct.Stack: CustomDebugStringConvertible {
+    
+    public var debugDescription: String { map { "\($0)" }.joined(separator: " ") }
+    
 }

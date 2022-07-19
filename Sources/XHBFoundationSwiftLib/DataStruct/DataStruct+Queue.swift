@@ -62,3 +62,8 @@ extension DataStruct.Queue: Swift.Sequence {
         }
     }
 }
+
+extension DataStruct.Queue: CustomDebugStringConvertible {
+    
+    public var debugDescription: String { map { "\($0)" }.joined(separator: " ") }
+}

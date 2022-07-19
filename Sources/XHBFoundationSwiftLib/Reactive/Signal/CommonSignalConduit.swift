@@ -13,10 +13,12 @@ class CommonSignalConduit<Value, Failure: Error>: SignalConduit {
     private var allObservers: Dictionary<UUID, AnyObserver<Value, Failure>>
     private var signal: Signal?
     
-    init<S: Observable>(source: S? = nil) where S.Output == Value, S.Failure == Failure {
-        if let s = source {
-            anySource = .init(s)
-        }
+    override init() {
+        allObservers = .init()
+    }
+    
+    init<S: Observable>(source: S) where S.Output == Value, S.Failure == Failure {
+        anySource = .init(source)
         allObservers = .init()
     }
     
@@ -33,6 +35,30 @@ class CommonSignalConduit<Value, Failure: Error>: SignalConduit {
         return bridger
     }
     
+    func receiveSignal(_ signal: Signal) {
+        lock.lock()
+        defer { lock.unlock() }
+        forEachObserver(action: { (_, observer) in observer.receive(self) })
+    }
+    
+    func receiveValue(_ value: Value) {
+        lock.lock()
+        defer { lock.unlock() }
+        forEachObserver(action: { (_, observer) in observer.receive(value) })
+    }
+    
+    func receiveFailure(_ failure: Failure) {
+        lock.lock()
+        defer { lock.unlock() }
+        forEachObserver(action: { (_, observer) in observer.receive(.failure(failure)) })
+    }
+    
+    func receiveCompletion() {
+        lock.lock()
+        defer { lock.unlock() }
+        forEachObserver(action: { (_, observer) in observer.receive(.finished) })
+    }
+    
     func receiveSignal(_ signal: Signal, _ id: UUID) {
         self.signal = signal
         guard let _ = self.signal else { return }
@@ -44,13 +70,11 @@ class CommonSignalConduit<Value, Failure: Error>: SignalConduit {
     }
     
     func receiveFailure(_ failure: Failure, _ id: UUID) {
-        let observer = allObservers.removeValue(forKey: id)
-        observer?.receive(.failure(failure))
+        allObservers[id]?.receive(.failure(failure))
     }
     
     func receiveCompletion(_ id: UUID) {
-        let observer = allObservers.removeValue(forKey: id)
-        observer?.receive(.finished)
+        allObservers[id]?.receive(.finished)
     }
     
     func forEachObserver(action: @escaping (UUID, AnyObserver<Value, Failure>) -> Void) {

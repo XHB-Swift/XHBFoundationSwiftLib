@@ -67,13 +67,11 @@ extension URLSession.DataTaskOservation {
             guard let dataObserver = observers[id] else { return }
             dataObserver.observer.receive(value)
             dataObserver.observer.receive(.finished)
-            observers.removeValue(forKey: id)
         }
         
         private func receive(_ failure: Failure, _ id: UUID) {
             guard let dataObserver = observers[id] else { return }
             dataObserver.observer.receive(.failure(failure))
-            observers.removeValue(forKey: id)
         }
         
         func attach<Ob>(_ observer: Ob, to session: URLSession, request: URLRequest) where Ob : Observer, Failure == Ob.Failure, Output == Ob.Input {
