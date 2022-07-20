@@ -11,88 +11,66 @@ extension DataStruct {
     
     public struct LoopSingleLinkedList<Element> {
         
-        internal var front: SingleLinkedListNode<Element>?
-        internal var rear: SingleLinkedListNode<Element>?
+        internal typealias _Storage = _SingleLinkedListStorage<Element>
         
-        public var count: Int { innerCount }
-        public var isEmpty: Bool { count == 0 }
+        internal var _storage: _Storage
         
-        private var innerCount: Int = 0
+        public init() {
+            _storage = .init()
+        }
         
         public init<S: Sequence>(_ s: S) where Element == S.Element {
-            var iterator = s.makeIterator()
-            while let element = iterator.next() {
-                let node = SingleLinkedListNode(storage: element, next: nil)
-                innerCount += 1
-                if innerCount == 1 {
-                    front = node
-                } else {
-                    rear?.next = node
-                }
-                rear = node
-            }
-            rear?.next = front
+            _storage = .init(s)
+            _storage.loop = true
         }
-        
-        mutating public func insert(_ element: Element, at index: Int) {
-            let new = SingleLinkedListNode<Element>(storage: element, next: nil)
-            if index == 0 {
-                new.next = front
-                front = new
-                rear?.next = front
-                innerCount += 1
-            } else if !(0..<innerCount).contains(index) {
-                rear?.next = new
-                rear = new
-                rear?.next = front
-                innerCount += 1
-            } else {
-                var tmp = front
-                var i = 1
-                while let next = tmp?.next {
-                    if i == index {
-                        let n = tmp?.next
-                        tmp?.next = new
-                        new.next = n
-                        innerCount += 1
-                        break
-                    }
-                    tmp = next
-                    i += 1
-                }
+    }
+}
+
+extension DataStruct.LoopSingleLinkedList: LinkedListModule {
+    
+    public var count: Int { _storage.count }
+    public var isEmpty: Bool { _storage.isEmpty }
+    
+    public subscript(index: Int) -> Element? {
+        set {
+            guard let element = newValue else { return }
+            guard let target = _storage._find(index) else {
+                append(element)
+                return
             }
+            target.storage = element
         }
-        
-        @discardableResult
-        mutating public func remove(at index: Int) -> Element? {
-            if !(0..<innerCount).contains(index) { return nil }
-            if index == 0 {
-                let next = front?.next
-                front?.next = nil
-                front = next
-                rear?.next = front
-                innerCount -= 1
-                return front?.storage
-            }
-            var tmp = front
-            var i = 1
-            while let next = tmp?.next, next !== front {
-                if i == index {
-                    let n = next.next
-                    tmp?.next = n
-                    next.next = nil
-                    if i == innerCount - 1 {
-                        rear = tmp
-                        rear?.next = front
-                    }
-                    innerCount -= 1
-                    return next.storage
-                }
-                tmp = next
-                i += 1
-            }
-            return nil
+        get {
+            return _storage._find(index)?.storage
         }
+    }
+    
+    public func append(_ element: Element) {
+        _storage._append(.init(storage: element, next: nil))
+    }
+    
+    public func append<S>(contentsof s: S) where S : Sequence, Element == S.Element {
+        s.forEach { append($0) }
+    }
+    
+    public func insert(_ element: Element, at index: Int) {
+        _storage._insert(.init(storage: element, next: nil), at: index)
+    }
+    
+    public func removeFirst() -> Element? {
+        return _storage._removeFirst()?.storage
+    }
+    
+    public func removeLast() -> Element? {
+        return _storage._removeLast()?.storage
+    }
+    
+    public func remove(at index: Int) -> Element? {
+        return _storage._remove(index)?.storage
+    }
+    
+    public func removeAll() {
+        _storage._removeAll()
     }
 }
 
@@ -102,28 +80,26 @@ extension DataStruct.LoopSingleLinkedList: Swift.Sequence {
     
     public struct Iterator: IteratorProtocol {
         
-        internal var _storage: SingleLinkedListNode<Element>?
-        internal var _begin: SingleLinkedListNode<Element>?
-        internal var _next: SingleLinkedListNode<Element>?
+        internal var _front: _Storage._SingleNode<Element>?
+        internal var _next: _Storage._SingleNode<Element>?
         internal var _stop = false
         
-        internal init(_begin: SingleLinkedListNode<Element>?) {
-            self._storage = _begin
-            self._begin = _begin
-            self._next = _begin?.next
+        internal init(_storage: _Storage?) {
+            self._front = _storage?.front
+            self._next = _front
         }
         
         mutating public func next() -> Element? {
             if _stop { return nil }
-            let storage = _storage?.storage
-            _storage = _storage?.next
-            _stop = (_begin === _storage)
+            let storage = _next?.storage
+            _next = _next?.next
+            _stop = (_front === _next)
             return storage
         }
     }
     
     public func makeIterator() -> Iterator {
-        return .init(_begin: front)
+        return .init(_storage: _storage)
     }
 }
 

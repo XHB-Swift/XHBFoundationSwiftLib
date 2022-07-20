@@ -9,16 +9,11 @@ import Foundation
 
 extension DataStruct {
     
-    public struct SingleLinkedList<Element>: LinkedListModule {
+    public struct SingleLinkedList<Element> {
         
-        internal typealias _Storage = _LinkedList<Element>
+        internal typealias _Storage = _SingleLinkedListStorage<Element>
         
         internal var _storage: _Storage
-        
-        public var count: Int { innerCount }
-        public var isEmpty: Bool { count == 0 }
-        
-        private var innerCount: Int = 0
         
         public init() {
             _storage = .init()
@@ -32,12 +27,29 @@ extension DataStruct {
 
 extension DataStruct.SingleLinkedList: LinkedListModule {
     
+    public var count: Int { _storage.count }
+    public var isEmpty: Bool { _storage.isEmpty }
+    
     public subscript(_ index: Int) -> Element? {
-        return _storage._find(index)?.storage
+        set {
+            guard let element = newValue else { return }
+            guard let node = _storage._find(index) else {
+                append(element)
+                return
+            }
+            node.storage = element
+        }
+        get {
+            return _storage._find(index)?.storage
+        }
     }
     
     public func append(_ element: Element) {
         _storage._append(.init(storage: element, next: nil))
+    }
+    
+    public func append<S>(contentsof s: S) where S : Sequence, Element == S.Element {
+        s.forEach { append($0) }
     }
     
     public func insert(_ element: Element, at index: Int) {
@@ -49,22 +61,19 @@ extension DataStruct.SingleLinkedList: LinkedListModule {
         return _storage._remove(index)?.storage
     }
     
-    public func append<S>(contentsof s: S) where S : Sequence, Element == S.Element {
-        <#code#>
-    }
-    
+    @discardableResult
     public func removeFirst() -> Element? {
-        <#code#>
+        return _storage._removeFirst()?.storage
     }
     
+    @discardableResult
     public func removeLast() -> Element? {
-        <#code#>
+        return _storage._removeLast()?.storage
     }
     
     public func removeAll() {
-        <#code#>
+        _storage._removeAll()
     }
-    
 }
 
 extension DataStruct.SingleLinkedList: Swift.Sequence {
@@ -73,7 +82,7 @@ extension DataStruct.SingleLinkedList: Swift.Sequence {
     
     public struct Iterator: IteratorProtocol {
         
-        internal var _next: _Storage._Node?
+        internal var _next: _Storage._SingleNode<Element>?
         
         internal init(_storage: _Storage) {
             _next = _storage.front?.next
