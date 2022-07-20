@@ -18,15 +18,21 @@ internal final class SingleLinkedListNode<Element> {
     }
 }
 
-internal final class DoubleSingleLinkedListNode<Element> {
+internal final class DoubleLinkedListNode<Element> {
     
-    internal var prior: DoubleSingleLinkedListNode?
-    internal var next: DoubleSingleLinkedListNode?
+    internal weak var prior: DoubleLinkedListNode?
+    internal var next: DoubleLinkedListNode?
     internal var storage: Element
     
-    internal init(storage: Element, next: DoubleSingleLinkedListNode<Element>?, prior: DoubleSingleLinkedListNode<Element>?) {
+    internal init(storage: Element, next: DoubleLinkedListNode<Element>?, prior: DoubleLinkedListNode<Element>?) {
         self.prior = prior
         self.next = next
         self.storage = storage
+    }
+    
+    deinit {
+        #if DEBUG
+        print("Released = \(self)")
+        #endif
     }
 }
