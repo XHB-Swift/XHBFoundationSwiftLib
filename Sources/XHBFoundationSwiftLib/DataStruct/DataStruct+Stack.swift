@@ -11,34 +11,34 @@ extension DataStruct {
     
     public struct Stack<Element> {
         
-        private var storage: ContiguousArray<Element>
+        internal var _storage: DataStruct.SingleLinkedList<Element>
         
-        public var count: Int { return storage.count }
-        public var isEmpty: Bool { return storage.isEmpty }
+        public var count: Int { _storage.count }
+        public var isEmpty: Bool { _storage.isEmpty }
         
         public init() {
-            storage = .init()
+            _storage = .init()
         }
         
-        mutating public func push(_ element: Element) {
-            storage.append(element)
+        public func push(_ element: Element) {
+            _storage.insert(element, at: 0)
         }
         
-        mutating public func pop() -> Element? {
-            let last = storage.last
-            if storage.isNotEmpty {
-                _ = storage.removeLast()
+        public func pop() -> Element? {
+            let last = _storage.first
+            if !isEmpty {
+                _ = _storage.removeFirst()
             }
             return last
         }
         
         public func peek() -> Element? {
-            return storage.last
+            return _storage.first
         }
         
-        mutating public func clear() {
+        public func clear() {
             if isEmpty { return }
-            storage.removeAll()
+            _storage.removeAll()
         }
     }
 }
@@ -46,10 +46,10 @@ extension DataStruct {
 extension DataStruct.Stack: Swift.Sequence {
     
     public typealias Element = Element
-    public typealias Iterator = AnyIterator<Element>
+    public typealias Iterator = DataStruct.SingleLinkedList<Element>.Iterator
     
-    public func makeIterator() -> AnyIterator<Element> {
-        return .init(storage.reversed().makeIterator())
+    public func makeIterator() -> Iterator {
+        return _storage.makeIterator()
     }
 }
 

@@ -25,13 +25,16 @@ extension DataStruct {
     }
 }
 
-extension DataStruct.DoubleLinkedList {
+extension DataStruct.DoubleLinkedList: LinkedListModule {
     
-    public mutating func append(_ element: Element) {
+    public var first: Element? { _storage.front?.storage }
+    public var last: Element? { _storage.rear?.storage }
+    
+    public func append(_ element: Element) {
         _storage._append(.init(storage: element, next: nil, prior: nil))
     }
     
-    public mutating func append<S: Sequence>(contentsof s: S) where S.Element == Element {
+    public func append<S: Sequence>(contentsof s: S) where S.Element == Element {
         var iterator = s.makeIterator()
         while let next = iterator.next() {
             append(next)
@@ -39,20 +42,25 @@ extension DataStruct.DoubleLinkedList {
     }
     
     @discardableResult
-    public mutating func removeFirst() -> Element? {
+    public func removeFirst() -> Element? {
         return _storage._removeFirst()?.storage
     }
     
     @discardableResult
-    public mutating func removeLast() -> Element? {
+    public func removeLast() -> Element? {
         return _storage._removeLast()?.storage
     }
     
-    public mutating func insert(_ element: Element, at index: Int) {
+    @discardableResult
+    public func remove(at index: Int) -> Element? {
+        return _storage._remove(index)?.storage
+    }
+    
+    public func insert(_ element: Element, at index: Int) {
         _storage._insert(.init(storage: element, next: nil, prior: nil), at: index)
     }
     
-    public mutating func insert<S: Sequence>(_ elements: S, at index: Int) where S.Element == Element {
+    public func insert<S: Sequence>(_ elements: S, at index: Int) where S.Element == Element {
         guard let target = _storage._find(index) else {
             append(contentsof: elements)
             return
@@ -66,7 +74,7 @@ extension DataStruct.DoubleLinkedList {
         newStorage.rear?.next = target
     }
     
-    public mutating func update(_ element: Element, at index: Int) {
+    public func update(_ element: Element, at index: Int) {
         guard let target = _storage._find(index) else {
             append(element)
             return
@@ -74,15 +82,15 @@ extension DataStruct.DoubleLinkedList {
         target.storage = element
     }
     
-    public mutating func removeAll() {
+    public func removeAll() {
         _storage._removeAll()
     }
     
-    public mutating func reversed() {
+    public func reversed() {
         _storage._reversed = !_storage._reversed
     }
     
-    subscript(position: Int) -> Element? {
+    public subscript(position: Int) -> Element? {
         set {
             guard let element = newValue else { return }
             guard let target = _storage._find(position) else {

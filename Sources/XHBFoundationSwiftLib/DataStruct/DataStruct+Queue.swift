@@ -11,55 +11,41 @@ extension DataStruct {
     
     public struct Queue<Element> {
         
-        private var storage: ContiguousArray<Element> = .init()
-        private var innerCount = 0
+        private var _storage: DataStruct.DoubleLinkedList<Element> = .init()
         
-        public var isEmpty: Bool { return innerCount == 0 }
-        public var count: Int { return innerCount }
+        public var isEmpty: Bool { _storage.isEmpty }
+        public var count: Int { _storage.count }
         
-        mutating public func enqueue(_ element: Element) {
-            storage.append(element)
-            innerCount += 1
+        public func enqueue(_ element: Element) {
+            _storage.append(element)
         }
         
-        mutating public func dequeue() -> Element? {
-            let first = storage.first
-            if storage.isNotEmpty {
-                _ = storage.removeFirst()
-                innerCount -= 1
+        public func dequeue() -> Element? {
+            let first = _storage.first
+            if !isEmpty {
+                _ = _storage.removeFirst()
             }
             return first
         }
         
         public func peek() -> Element? {
-            return storage.first
+            return _storage.first
         }
         
-        public mutating func clear() {
+        public func clear() {
             if isEmpty { return }
-            storage.removeAll()
-            innerCount = 0
+            _storage.removeAll()
         }
-        
     }
 }
 
 extension DataStruct.Queue: Swift.Sequence {
     
     public typealias Element = Element
-    public typealias Iterator = Swift.AnyIterator<Element>
+    public typealias Iterator = DataStruct.DoubleLinkedList<Element>.Iterator
     
-    public func makeIterator() -> AnyIterator<Element> {
-        var i = 0
-        var innerCount = count
-        return .init {
-            if innerCount == 0 { return nil }
-            defer {
-                innerCount -= 1
-                i += 1
-            }
-            return self.storage[i]
-        }
+    public func makeIterator() -> Iterator {
+        return _storage.makeIterator()
     }
 }
 

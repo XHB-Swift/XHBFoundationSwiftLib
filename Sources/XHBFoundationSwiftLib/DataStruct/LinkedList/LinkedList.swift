@@ -13,6 +13,8 @@ public protocol LinkedListModule {
     
     var count: Int { get }
     var isEmpty: Bool { get }
+    var first: Element? { get }
+    var last: Element? { get }
     
     subscript(_ index: Int) -> Element? { get set }
     

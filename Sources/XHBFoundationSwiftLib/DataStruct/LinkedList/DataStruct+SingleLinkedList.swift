@@ -27,6 +27,9 @@ extension DataStruct {
 
 extension DataStruct.SingleLinkedList: LinkedListModule {
     
+    public var first: Element? { _storage.front?.storage }
+    public var last: Element? { _storage.rear?.storage }
+    
     public var count: Int { _storage.count }
     public var isEmpty: Bool { _storage.isEmpty }
     
@@ -85,7 +88,7 @@ extension DataStruct.SingleLinkedList: Swift.Sequence {
         internal var _next: _Storage._SingleNode<Element>?
         
         internal init(_storage: _Storage) {
-            _next = _storage.front?.next
+            _next = _storage.front
         }
         
         public mutating func next() -> Element? {

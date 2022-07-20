@@ -64,6 +64,10 @@ internal final class _SingleLinkedListStorage<Element>: _LinkedListStorage<Eleme
     internal func _append(_ node: _SingleNode<Element>) {
         if isEmpty {
             front = node
+            rear = node
+            count += 1
+            updateLoop()
+            return
         }
         rear?.next = node
         rear = node
@@ -76,14 +80,19 @@ internal final class _SingleLinkedListStorage<Element>: _LinkedListStorage<Eleme
             _append(node)
             return
         }
-        let n = target.next
-        target.next = node
-        node.next = n
-        count += 1
-        if n == nil {
-            rear = node
-            updateLoop()
+        if index == 0 {
+            node.next = front
+            front = node
+        } else {
+            let n = target.next
+            target.next = node
+            node.next = n
+            if n == nil {
+                rear = node
+                updateLoop()
+            }
         }
+        count += 1
     }
     
     internal override func _removeFirst() -> _SingleNode<Element>? {

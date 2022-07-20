@@ -28,6 +28,8 @@ extension DataStruct {
 
 extension DataStruct.LoopSingleLinkedList: LinkedListModule {
     
+    public var first: Element? { _storage.front?.storage }
+    public var last: Element? { _storage.rear?.storage }
     public var count: Int { _storage.count }
     public var isEmpty: Bool { _storage.isEmpty }
     
