@@ -18,17 +18,17 @@ extension NotificationCenter {
         public let name: Notification.Name
         public let object: AnyObject?
         
-        private let boxContainer: _ObservableCenterBox
+        private let _signalConduit: _NotificationSignalConduit
         
         public init(center: NotificationCenter, name: Notification.Name, object: AnyObject?) {
             self.center = center
             self.name = name
             self.object = object
-            self.boxContainer = .init(center, name, object)
+            self._signalConduit = .init(source: center, name: name, object: object)
         }
         
         public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Never == Ob.Failure, Notification == Ob.Input {
-            self.boxContainer.subscribe(observer)
+            self._signalConduit.attach(observer: observer)
         }
     }
     
@@ -42,27 +42,26 @@ extension NotificationCenter.Observation {
     
     private typealias NotificationObserver = AnyObserver<Notification, Never>
     
-    private final class _ObservableCenterBox: SelectorObserver<Notification, NotificationCenter> {
-         
-        private var baseArray: ContiguousArray<NotificationObserver>
+    private final class _NotificationSignalConduit: SelectorSignalConduit<NotificationCenter, Notification, Never> {
         
-        deinit {
-            base?.removeObserver(self)
+        private let lock: NSRecursiveLock = .init()
+        
+        override func cancel() {
+            lock.lock()
+            defer { lock.unlock() }
+            source?.removeObserver(self)
+            super.cancel()
         }
         
-        init(_ center: NotificationCenter, _ name: Notification.Name, _ object: AnyObject?) {
-            self.baseArray = .init()
-            super.init(base: center)
-            center.addObserver(self, selector: self.selector, name: name, object: object)
-            self.closure = .init({ [weak self] sender in
-                self?.baseArray.forEach { $0.receive(sender) }
-            })
+        init(source: NotificationCenter, name: Notification.Name, object: AnyObject?) {
+            super.init(source: source)
+            source.addObserver(self, selector: self.selector, name: name, object: object)
         }
         
-        public func subscribe<Ob>(_ observer: Ob) where Ob : Observer, Never == Ob.Failure, Notification == Ob.Input {
-            self.baseArray.append(observer.eraseToAnyObserver())
+        override func attach<O>(observer: O) where Notification == O.Input, Never == O.Failure, O : Observer {
+            lock.lock()
+            defer { lock.unlock() }
+            super.attach(observer: observer)
         }
-        
     }
-    
 }
