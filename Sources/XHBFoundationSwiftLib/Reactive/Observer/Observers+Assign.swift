@@ -41,9 +41,10 @@ extension Observers {
 
 extension Observable where Failure == Never {
     
-    public func assign<Root>(to keyPath: ReferenceWritableKeyPath<Root, Output>, on object: Root) {
+    public func assign<Root>(to keyPath: ReferenceWritableKeyPath<Root, Output>, on object: Root) -> AnyCancellable {
         let assign: Observers.Assign = .init(object: object, keyPath: keyPath)
         subscribe(assign)
+        return .init(assign)
     }
     
 }
