@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class SelectorSignalConduit<Source, Output, Failure: Error>: Signal {
+open class SelectorSignalConduit<Source, Output, Failure: Error>: Signal {
     
     public let identifier: UUID = .init()
     
@@ -25,13 +25,13 @@ public class SelectorSignalConduit<Source, Output, Failure: Error>: Signal {
         self.source = source
     }
     
-    public func cancel() {
+    open func cancel() {
         source = nil
         requirement = .none
         observers.removeAll()
     }
     
-    public func request(_ requirement: Requirement) {
+    open func request(_ requirement: Requirement) {
         if self.requirement != requirement {
             self.requirement = requirement
         }
@@ -47,7 +47,7 @@ public class SelectorSignalConduit<Source, Output, Failure: Error>: Signal {
         }
     }
     
-    public func attach<O: Observer>(observer: O) where O.Input == Output, O.Failure == Failure {
+    open func attach<O: Observer>(observer: O) where O.Input == Output, O.Failure == Failure {
         observers[observer.identifier] = .init(observer)
         observer.receive(self)
     }
