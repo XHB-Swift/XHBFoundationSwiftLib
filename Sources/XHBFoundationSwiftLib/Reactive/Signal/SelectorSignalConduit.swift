@@ -7,31 +7,31 @@
 
 import Foundation
 
-class SelectorSignalConduit<Source, Output, Failure: Error>: Signal {
+public class SelectorSignalConduit<Source, Output, Failure: Error>: Signal {
     
-    let identifier: UUID = .init()
+    public let identifier: UUID = .init()
     
     private(set) var requirement: Requirement = .none
     private var observers: Dictionary<UUID, AnyObserver<Output, Failure>> = .init()
     
-    var source: Source?
-    let selector: Selector = #selector(selectorAction(_:))
+    public var source: Source?
+    public let selector: Selector = #selector(selectorAction(_:))
     
     deinit { cancel() }
     
-    init() {}
+    public init() {}
     
-    init(source: Source?) {
+    public init(source: Source?) {
         self.source = source
     }
     
-    func cancel() {
+    public func cancel() {
         source = nil
         requirement = .none
         observers.removeAll()
     }
     
-    func request(_ requirement: Requirement) {
+    public func request(_ requirement: Requirement) {
         if self.requirement != requirement {
             self.requirement = requirement
         }
@@ -40,14 +40,14 @@ class SelectorSignalConduit<Source, Output, Failure: Error>: Signal {
         }
     }
     
-    @objc func selectorAction(_ sender: Any) {
+    @objc public func selectorAction(_ sender: Any) {
         guard let output = sender as? Output else { return }
         observers.forEach { (_,observer) in
             observer.receive(output)
         }
     }
     
-    func attach<O: Observer>(observer: O) where O.Input == Output, O.Failure == Failure {
+    public func attach<O: Observer>(observer: O) where O.Input == Output, O.Failure == Failure {
         observers[observer.identifier] = .init(observer)
         observer.receive(self)
     }
