@@ -46,23 +46,3 @@ final public class CurrentValueObservation<Output, Failure: Error>: Observation 
         observers.append(observer.eraseToAnyObserver())
     }
 }
-
-extension CurrentValueObservation where Failure == Never {
-    
-    @discardableResult
-    public func bind<Target: AnyObject>(target: Target,
-                                        to keyPath: ReferenceWritableKeyPath<Target, Output>) -> CurrentValueObservation<Output, Failure> {
-        let closureNeverOb: ClosureNeverObserver<Output> = .init { [weak target] in target?[keyPath: keyPath] = $0 }
-        subscribe(closureNeverOb)
-        return self
-    }
-    
-    @discardableResult
-    public func bind<Target: AnyObject, Value>(target: Target,
-                                               to keyPath: ReferenceWritableKeyPath<Target, Value>,
-                                               transform: @escaping (Output) -> Value) -> CurrentValueObservation<Output, Failure> {
-        let closureNeverOb: ClosureNeverObserver<Value> = .init { [weak target] in target?[keyPath: keyPath] = $0 }
-        map(transform).subscribe(closureNeverOb)
-        return self
-    }
-}
