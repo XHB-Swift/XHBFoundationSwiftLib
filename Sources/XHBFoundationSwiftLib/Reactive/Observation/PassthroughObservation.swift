@@ -7,6 +7,8 @@
 
 import Foundation
 
+public typealias PassthroughNeverObservation<Output> = PassthroughObservation<Output, Never>
+
 final public class PassthroughObservation<Output, Failure: Error>: Observation {
     
     public typealias Output = Output

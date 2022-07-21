@@ -7,6 +7,8 @@
 
 import Foundation
 
+public typealias CurrentValueNeverObservation<Output> = CurrentValueObservation<Output, Never>
+
 final public class CurrentValueObservation<Output, Failure: Error>: Observation {
     
     public typealias Output = Output
