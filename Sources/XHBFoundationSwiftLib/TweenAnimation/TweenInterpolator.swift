@@ -44,7 +44,7 @@ public final class TweenInterpolator {
         if time >= self.duration {
             self.v0 = self.v1
         } else {
-            self .moveToNext(t: time, d: (self.duration - time))
+            self.moveToNext(t: time, d: (self.duration - time))
         }
         self.delegate?.interpolator(self, didUpdateToValue: self.from)
     }

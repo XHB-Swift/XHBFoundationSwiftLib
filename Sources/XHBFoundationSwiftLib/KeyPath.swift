@@ -26,7 +26,7 @@ extension KeyPathEditable {
 
 extension NSObject {
     
-    open func runtimePropertyLazyBinding<T>(_ key: UnsafeRawPointer, _ lazyCreation: () -> T) -> T {
+    public func runtimePropertyLazyBinding<T>(_ key: UnsafeRawPointer, _ lazyCreation: () -> T) -> T {
         if let value = objc_getAssociatedObject(self, key) as? T {
             return value
         }

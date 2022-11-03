@@ -15,7 +15,7 @@ public typealias FileDownloaderCompletion = (_ result: Result<URL, Error>) -> Vo
 
 extension NSObject {
     
-    open class func fetchCachedFile(with url: String,
+    public class func fetchCachedFile(with url: String,
                                     format: String? = nil,
                                     dirName: String? = nil,
                                     documentDirPath: String? = cacheDirectory,
@@ -47,6 +47,17 @@ extension NSObject {
                     return
                 }
             }
+            if url.hasPrefix("file://") {
+                let newUrl = url.replacingOccurrences(of: "file://", with: "")
+                let localBundleFileUrl: URL
+                if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *) {
+                    localBundleFileUrl = .init(filePath: newUrl)
+                } else {
+                    localBundleFileUrl = .init(fileURLWithPath: newUrl)
+                }
+                mainBlock(.success(localBundleFileUrl))
+                return
+            }
             guard let remoteUrl = URL(string: url) else {
                 mainBlock(.failure(CommonError(code: 10, reason: "Invildate url: \(url)")))
                 return
@@ -56,17 +67,22 @@ extension NSObject {
                 fileName.append(".\(format)")
             }
             cachedFilePath.append(path: fileName)
-            let localFileUrl = URL(fileURLWithPath: cachedFilePath)
+            let localFileUrl: URL
+            if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *) {
+                localFileUrl = .init(filePath: cachedFilePath)
+            } else {
+                localFileUrl = .init(fileURLWithPath: cachedFilePath)
+            }
             if fileMgr.fileExists(atPath: cachedFilePath) {
                 mainBlock(.success(localFileUrl))
                 return
             }
-            self .downloadFile(with: remoteUrl, cachedFileUrl: localFileUrl, completion: mainBlock)
+            self.downloadFile(with: remoteUrl, cachedFileUrl: localFileUrl, completion: mainBlock)
         }
     }
     
     @available(macOS 10.15, iOS 13, *)
-    open class func asyncFetchCachedFile(with url: String,
+    public class func asyncFetchCachedFile(with url: String,
                                          format: String? = nil,
                                          dirName: String? = nil,
                                          documentDirPath: String? = cacheDirectory) async throws -> URL {
